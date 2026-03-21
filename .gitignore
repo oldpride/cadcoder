@@ -1,0 +1,11 @@
+__pycache__
+Macro/.vscode/
+*.FCStd
+*.FCBak
+*.stl
+
+# vi backups
+*.swp
+*.swo
+*.swn
+*.swm
