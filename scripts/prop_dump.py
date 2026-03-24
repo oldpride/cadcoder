@@ -3,7 +3,7 @@
 from pdb import main
 import FreeCAD as App
 import FreeCADGui as Gui
-from pdfclib.proptools import dump_obj_props
+from cadcoder.proptools import dump_obj_props
 
 '''
 optional positional argument:

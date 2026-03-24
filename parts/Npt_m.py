@@ -3,12 +3,12 @@ import Sketcher
 import Part
 import FreeCAD as App
 import FreeCADGui as Gui
-from pdfclib.baseClass import baseClass
-from pdfclib.containertools import get_LCS_by_prefix
-from pdfclib.objtools import update_obj_prop_jsonDict
-from pdfclib.subelementtools import update_objs_seName, update_doc_seName, get_seName_by_posName
+from cadcoder.baseClass import baseClass
+from cadcoder.containertools import get_LCS_by_prefix
+from cadcoder.objtools import update_obj_prop_jsonDict
+from cadcoder.subelementtools import update_objs_seName, update_doc_seName, get_seName_by_posName
 
-class Npt_m(baseClass):
+class npt_m(baseClass):
     def __init__(self, instanceName, doc, objPrefix="", useLabel=True, importer=None, OD_shrink_spec='0 in', holeDiaExpansion_spec='0 in', horizontalScale=1.1982, male_height_spec='0.3 in', nominalOD='`1', verticalScale=1.261,  ):
         self.OD_shrink_spec = OD_shrink_spec
         self.holeDiaExpansion_spec = holeDiaExpansion_spec
@@ -522,7 +522,7 @@ class Npt_m(baseClass):
         subtractive_helix.setExpression("Angle", f"<<{self.addPrefix('callsheet')}>>.helix_angle")
         
         # add trigger objects' expressions
-        from pdfclib.triggertools import link_watch_to_target
+        from cadcoder.triggertools import link_watch_to_target
         link_watch_to_target(doc, callsheet, 'nominalOD', spec, 'nominalOD', useLabel)
         
         # add delayed expression property values - values, not expressions, eg, enum value
@@ -546,11 +546,11 @@ class Npt_m(baseClass):
 
 def main():
     # main_part1
-    from pdfclib.doctools import recreate_tmp_doc
+    from cadcoder.doctools import recreate_tmp_doc
     doc = recreate_tmp_doc()
     
     # create instance of Npt_m
-    myInstance = Npt_m("myInstance", doc, objPrefix="", useLabel=True, importer=None, OD_shrink_spec='0 in', holeDiaExpansion_spec='0 in', horizontalScale=1.1982, male_height_spec='0.3 in', nominalOD='`1', verticalScale=1.261, )
+    myInstance = npt_m("myInstance", doc, objPrefix="", useLabel=True, importer=None, OD_shrink_spec='0 in', holeDiaExpansion_spec='0 in', horizontalScale=1.1982, male_height_spec='0.3 in', nominalOD='`1', verticalScale=1.261, )
     
     # main_part2
     from pprint import pformat
@@ -561,7 +561,7 @@ def main():
     for obj in top_objects:
         print(f"    name={obj.Name}, label={obj.Label}")
     
-    from pdfclib.doctools import reorganize_doc
+    from cadcoder.doctools import reorganize_doc
     reorganize_doc(doc) 
 
 

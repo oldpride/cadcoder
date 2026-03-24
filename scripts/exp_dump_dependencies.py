@@ -1,8 +1,8 @@
 import re
 import FreeCAD as App
 import FreeCADGui as Gui
-from pdfclib.expressiontools import dump_all_upstream_expObjPropKeys, is_objProp_expression
-from pdfclib.proptools import get_extended_propNames
+from cadcoder.expressiontools import dump_all_upstream_expObjPropKeys, is_objProp_expression
+from cadcoder.proptools import get_extended_propNames
 
 def parse_args():
     import argparse

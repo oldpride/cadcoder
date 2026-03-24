@@ -1,7 +1,7 @@
 import FreeCAD as App
 import FreeCADGui as Gui
-from pdfclib.containertools import get_container_by_objName, get_LCS_map, get_LCS_prefixes
-from pdfclib.objtools import get_obj_str
+from cadcoder.containertools import get_container_by_objName, get_LCS_map, get_LCS_prefixes
+from cadcoder.objtools import get_obj_str
 
 
 def parse_args():

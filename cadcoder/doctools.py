@@ -93,8 +93,8 @@ def diff_docs(doc1, doc2,
     straighten_doc(doc2)
 
     # import here to avoid circular import
-    from pdfclib.objtools import map_obj_name_label, get_obj_pythonSource, skip_objTypeIdNamePattern
-    from pdfclib.proptools import get_prop_info, print_prop_info
+    from cadcoder.objtools import map_obj_name_label, get_obj_pythonSource, skip_objTypeIdNamePattern
+    from cadcoder.proptools import get_prop_info, print_prop_info
     objName_by_label1 = map_obj_name_label(doc1)['name_by_label']
     objName_by_label2 = map_obj_name_label(doc2)['name_by_label']
 
@@ -266,8 +266,8 @@ def similar_strings(str1, str2):
     compare two strings, return True if they are similar
     - if only difference is addresses, return True
         eg, 
-        <pdfclib.triggertools.TriggeringFeature object at 0x000002296F1A4D50>
-        <pdfclib.triggertools.TriggeringFeature object at 0x000002296A7EE410>
+        <cadcoder.triggertools.TriggeringFeature object at 0x000002296F1A4D50>
+        <cadcoder.triggertools.TriggeringFeature object at 0x000002296A7EE410>
         are similar
     '''
 

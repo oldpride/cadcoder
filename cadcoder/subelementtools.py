@@ -1,6 +1,6 @@
 import re
 import Part
-from pdfclib.objtools import sort_objs_by_downstream, get_obj_by_objKey
+from cadcoder.objtools import sort_objs_by_downstream, get_obj_by_objKey
 
 
 attr_by_seType = {
@@ -298,7 +298,7 @@ def update_obj_seName(obj, refreshCache=False):
     get the stored prop, seType, posName from pythonFeature
     '''
 
-    from pdfclib.objtools import get_obj_prop_jsonDict
+    from cadcoder.objtools import get_obj_prop_jsonDict
     jsonDict = get_obj_prop_jsonDict(obj, 'pythonFeature')
 
     # return if jsonDict is empty

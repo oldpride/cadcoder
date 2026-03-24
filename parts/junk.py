@@ -3,10 +3,10 @@ import Sketcher
 import Part
 import FreeCAD as App
 import FreeCADGui as Gui
-from pdfclib.baseClass import baseClass
-from pdfclib.containertools import get_LCS_by_prefix
-from pdfclib.objtools import update_obj_prop_jsonDict
-from pdfclib.subelementtools import update_objs_seName, update_doc_seName, get_seName_by_posName
+from cadcoder.baseClass import baseClass
+from cadcoder.containertools import get_LCS_by_prefix
+from cadcoder.objtools import update_obj_prop_jsonDict
+from cadcoder.subelementtools import update_objs_seName, update_doc_seName, get_seName_by_posName
 
 class Npt_straight_bushing(baseClass):
     def __init__(self, instanceName, doc, objPrefix="", useLabel=True, importer=None, b_OD_shrink_spec='0.02 in', b_male_height_spec='0.5 in', b_nominalOD='`3/4', horizontalScale=1, prism_polygon_height_spec='0.2 in', prism_polygon_sides=6, s_effective_height_spec='0.45 in', s_holeDiaExpansion_spec='0.03 in', s_pitch_spec='0.05 in', s_radius_spec='0.25 in', verticalScale=1,  ):
@@ -31,12 +31,12 @@ class Npt_straight_bushing(baseClass):
         self.update_imports(b_npt_m_instance) # update import info for the instance
         b_npt_m_instance.body.Placement = Placement(Vector(0.0000, 0.0000, 0.0000), Rotation(1.0000, 0.0000, 0.0000, 0.0000))  # adjust imported object
         b_npt_m_instance.common_boolean.Visibility = False  # adjust imported object
-        from parts.Prism_polygon import Prism_polygon
+        from examples.Prism_polygon import Prism_polygon
         prism_polygon_instance = Prism_polygon('prism_polygon_instance', doc, objPrefix=self.objPrefix + 'prism_polygon_', useLabel=True, importer=self, horizontalScale=1, prism_polygon_height_spec='0.2 in', prism_polygon_radius_spec='0.6408587988004846 in', prism_polygon_sides=6, verticalScale=1, )
         self.prism_polygon_instance = prism_polygon_instance # expose as instance variable
         self.update_imports(prism_polygon_instance) # update import info for the instance
         prism_polygon_instance.body.Placement = Placement(Vector(0.0000, 0.0000, -5.0800), Rotation(0.0000, 0.0000, 0.0000, 1.0000))  # adjust imported object
-        from parts.Straight_m import Straight_m
+        from examples.Straight_m import Straight_m
         s_straight_m_instance = Straight_m('s_straight_m_instance', doc, objPrefix=self.objPrefix + 's_straight_m_', useLabel=True, importer=self, height_spec='0.8 in', holeDiaExpansion_spec='0.03 in', horizontalScale=1, pitch_spec='0.05 in', radius_spec='0.25 in', verticalScale=1, )
         self.s_straight_m_instance = s_straight_m_instance # expose as instance variable
         self.update_imports(s_straight_m_instance) # update import info for the instance
@@ -297,7 +297,7 @@ class Npt_straight_bushing(baseClass):
 
 def main():
     # main_part1
-    from pdfclib.doctools import recreate_tmp_doc
+    from cadcoder.doctools import recreate_tmp_doc
     doc = recreate_tmp_doc()
     
     # create instance of Npt_straight_bushing
@@ -312,7 +312,7 @@ def main():
     for obj in top_objects:
         print(f"    name={obj.Name}, label={obj.Label}")
     
-    from pdfclib.doctools import reorganize_doc
+    from cadcoder.doctools import reorganize_doc
     reorganize_doc(doc) 
 
 

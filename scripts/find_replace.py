@@ -16,7 +16,7 @@ from PySide2 import QtWidgets
 import PySide2.QtCore as QtCore
 import FreeCAD as App
 import FreeCADGui as Gui
-from pdfclib.proptools import propIsReadonly
+from cadcoder.proptools import propIsReadonly
 
 class ReplaceDialog(QtWidgets.QDialog):
     def __init__(self, parent=None):

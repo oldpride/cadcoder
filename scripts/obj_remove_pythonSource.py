@@ -1,6 +1,6 @@
 import FreeCAD as App
 import FreeCADGui as Gui
-from pdfclib.objtools import get_target_objs, remove_obj_pythonSource
+from cadcoder.objtools import get_target_objs, remove_obj_pythonSource
 
 description='''
 remove pythonSource from selected objects or all objects in the document

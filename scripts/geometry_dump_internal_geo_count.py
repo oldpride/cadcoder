@@ -1,7 +1,7 @@
 import re
 import FreeCAD as App
 import FreeCADGui as Gui
-from pdfclib.geometrytools import get_obj_internalGeometry_count
+from cadcoder.geometrytools import get_obj_internalGeometry_count
 import Part
 
 

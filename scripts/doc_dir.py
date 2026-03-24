@@ -3,7 +3,7 @@ import FreeCADGui as Gui
 import os
 import sys
 
-from pdfclib.objtools import recompute_doc
+from cadcoder.objtools import recompute_doc
 
 prog = os.path.basename(sys.argv[0])
 

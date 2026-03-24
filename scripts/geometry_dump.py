@@ -1,7 +1,7 @@
 import re
 import FreeCAD as App
 import FreeCADGui as Gui
-from pdfclib.geometrytools import get_geometry
+from cadcoder.geometrytools import get_geometry
 
 
 def parse_args():

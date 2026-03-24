@@ -9,7 +9,7 @@ from pprint import pformat
 import re
 import FreeCAD as App
 import FreeCADGui as Gui
-from pdfclib.expressiontools import get_doc_all_expInfo, get_obj_all_expInfo
+from cadcoder.expressiontools import get_doc_all_expInfo, get_obj_all_expInfo
 
 def parse_args():
     import argparse

@@ -1,7 +1,7 @@
 import FreeCAD as App
 import FreeCADGui as Gui    
-from pdfclib.importtools import fix_obj_import_callparam
-from pdfclib.objtools import get_obj_str, skip_obj
+from cadcoder.importtools import fix_obj_import_callparam
+from cadcoder.objtools import get_obj_str, skip_obj
 
 
 def parse_args():

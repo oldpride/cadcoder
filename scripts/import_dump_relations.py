@@ -5,7 +5,7 @@ dump selected objects' properties' expressions's dependency order
 import re
 import FreeCAD as App
 import FreeCADGui as Gui
-from pdfclib.importtools import map_importInfo
+from cadcoder.importtools import map_importInfo
 
 
 def parse_args():

@@ -7,9 +7,9 @@ import sys
 
 import FreeCAD as App
 import FreeCADGui as Gui
-from pdfclib.callsheettools import get_top_callsheets_using_exp
-from pdfclib.objtools import print_obj
-from pdfclib.subelementtools import update_doc_seName
+from cadcoder.callsheettools import get_top_callsheets_using_exp
+from cadcoder.objtools import print_obj
+from cadcoder.subelementtools import update_doc_seName
 
 prog = os.path.basename(sys.argv[0])
     
@@ -109,10 +109,10 @@ def main():
     #     instanceName = f"{args.objPrefix}{className.lower()}_instance"
     #     code_block += f"{instanceName} = {className}('{instanceName}', doc, objPrefix='{args.objPrefix}', useLabel=True, importer={top_callsheet_pythonSource_str}, {args.param})\n"
     #     code_block += f"doc.recompute()\n"
-    #     code_block += f"from pdfclib.objtools import map_obj_name_label\n"
+    #     code_block += f"from cadcoder.objtools import map_obj_name_label\n"
     #     code_block += f"map_obj_name_label(doc, refreshCache=True) # update object name to label mapping\n"
     #     code_block += f""
-    #     code_block += f"from pdfclib.callsheettools import link_parent_child_callsheets\n"
+    #     code_block += f"from cadcoder.callsheettools import link_parent_child_callsheets\n"
     #     code_block += f"link_parent_child_callsheets(doc.getObject('{top_callsheet_name}'), {instanceName}.callsheet)\n"
     #     code_block += f"doc.recompute()\n"
     #     code_block += f""
@@ -142,13 +142,13 @@ def main():
             continue
 
         doc.recompute()
-        from pdfclib.objtools import map_obj_name_label
+        from cadcoder.objtools import map_obj_name_label
         map_obj_name_label(doc, refreshCache=True)  # update object name to label mapping
-        from pdfclib.callsheettools import link_parent_child_callsheets
+        from cadcoder.callsheettools import link_parent_child_callsheets
         link_parent_child_callsheets(doc.getObject(top_callsheet_name), instance.callsheet)
         doc.recompute()
 
-    from pdfclib.doctools import reorganize_doc
+    from cadcoder.doctools import reorganize_doc
     reorganize_doc(doc) 
 
 

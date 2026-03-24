@@ -6,8 +6,8 @@ import FreeCAD as App
 import FreeCADGui as Gui
 import os
 import sys
-from pdfclib.objtools import get_obj_str
-from pdfclib.proptools import dump_obj_props
+from cadcoder.objtools import get_obj_str
+from cadcoder.proptools import dump_obj_props
 
 
 prog= os.path.basename(sys.argv[0])

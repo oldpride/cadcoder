@@ -1,6 +1,6 @@
 import FreeCAD as App
 import FreeCADGui as Gui
-from pdfclib.doctools import straighten_doc
+from cadcoder.doctools import straighten_doc
 
 
 

@@ -3,8 +3,8 @@
 from pdb import main
 import FreeCAD as App
 import FreeCADGui as Gui
-from pdfclib.objtools import print_obj
-from pdfclib.subelementtools import update_obj_seName
+from cadcoder.objtools import print_obj
+from cadcoder.subelementtools import update_obj_seName
 
 
 def parse_args():

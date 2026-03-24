@@ -1,6 +1,6 @@
 import traceback
-from pdfclib.objtools import normalize_label
-from pdfclib.proptools import float2str, propValue2python
+from cadcoder.objtools import normalize_label
+from cadcoder.proptools import float2str, propValue2python
 import FreeCAD as App
 import FreeCADGui as Gui
 import Part

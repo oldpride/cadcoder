@@ -1,5 +1,5 @@
 from pprint import pformat
-from pdfclib.edgetools import get_edgeName_by_position
+from cadcoder.edgetools import get_edgeName_by_position
 
 
 def add_chamfer(doc, label, containerObj, shapeObj, position, chamfer_size):

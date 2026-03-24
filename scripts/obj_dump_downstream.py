@@ -1,6 +1,6 @@
 import FreeCAD as App
 import FreeCADGui as Gui
-from pdfclib.objtools import get_obj_all_downstreams
+from cadcoder.objtools import get_obj_all_downstreams
 
 
 def parse_args():

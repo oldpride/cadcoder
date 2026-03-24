@@ -13,17 +13,17 @@ from FreeCAD import Vector, Placement
 import json
 from PySide2 import QtWidgets, QtCore
 from pprint import pformat
-from pdfclib.callsheettools import is_callParam
-from pdfclib.importtools import map_importInfo
-from pdfclib.containertools import get_LCS_map, get_LCS_prefixes, get_container_by_objName
-from pdfclib.expressiontools import get_expInfo_by_objPropKey, sort_objs_exp_dependency
-from pdfclib.logtools import prefix_stack
-from pdfclib.matchtools import match_key_startswith
-from pdfclib.objtools import expand_objects, get_doc_top_objects, get_group_top_objects, get_obj_by_objKey, sort_objs_by_downstream
-from pdfclib.proptools import compare_obj_prop_with_default, float2str, get_prop_info, normalize_label, propValue2python, propIsReadonly, get_obj_varname
-from pdfclib.spreadsheettools import is_cell_in_sheet
-from pdfclib.subelementtools import get_posName_by_seName
-from pdfclib.uitools import TextDialog
+from cadcoder.callsheettools import is_callParam
+from cadcoder.importtools import map_importInfo
+from cadcoder.containertools import get_LCS_map, get_LCS_prefixes, get_container_by_objName
+from cadcoder.expressiontools import get_expInfo_by_objPropKey, sort_objs_exp_dependency
+from cadcoder.logtools import prefix_stack
+from cadcoder.matchtools import match_key_startswith
+from cadcoder.objtools import expand_objects, get_doc_top_objects, get_group_top_objects, get_obj_by_objKey, sort_objs_by_downstream
+from cadcoder.proptools import compare_obj_prop_with_default, float2str, get_prop_info, normalize_label, propValue2python, propIsReadonly, get_obj_varname
+from cadcoder.spreadsheettools import is_cell_in_sheet
+from cadcoder.subelementtools import get_posName_by_seName
+from cadcoder.uitools import TextDialog
 import pdb
 
 debug = 0
@@ -31,7 +31,7 @@ dialog = None
 
 def main_part1():
     # main_part1
-    from pdfclib.doctools import recreate_tmp_doc
+    from cadcoder.doctools import recreate_tmp_doc
     doc = recreate_tmp_doc()
 
 def export_doc(topClassName: str):
@@ -40,9 +40,9 @@ def export_doc(topClassName: str):
     # add_script_line('import Part')
     add_script_line('import FreeCAD as App')
     add_script_line('import FreeCADGui as Gui')
-    add_script_line('from pdfclib.baseClass import baseClass')
-    # add_script_line('from pdfclib.containertools import get_LCS_by_prefix')
-    # add_script_line('from pdfclib.objtools import update_obj_prop_jsonDict')
+    add_script_line('from cadcoder.baseClass import baseClass')
+    # add_script_line('from cadcoder.containertools import get_LCS_by_prefix')
+    # add_script_line('from cadcoder.objtools import update_obj_prop_jsonDict')
 
     # now that we have topClassName, we can define the class interface
     add_script_line('') 
@@ -79,7 +79,7 @@ def export_doc(topClassName: str):
 
     
     add_script_line('')
-    # from pdfclib.doctools import recreate_tmp_doc
+    # from cadcoder.doctools import recreate_tmp_doc
     # doc = recreate_tmp_doc()
     add_script_line(f'doc =App.newDocument("{topClassName}")')
     add_script_line(f'doc.Label = "{topClassName}" # explicitly set document label to {topClassName}; default could be {topClassName}1.')

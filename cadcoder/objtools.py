@@ -3,7 +3,7 @@ import re
 import traceback
 import FreeCAD as App
 import FreeCADGui as Gui
-from pdfclib.matchtools import match_key_startswith
+from cadcoder.matchtools import match_key_startswith
 import json
 
 def normalize_label(s: str) -> str:

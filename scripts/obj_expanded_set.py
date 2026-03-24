@@ -1,6 +1,6 @@
 import FreeCAD as App
 import FreeCADGui as Gui
-from pdfclib.objtools import expand_objects
+from cadcoder.objtools import expand_objects
 
 description='''
 expand selected objects into all downstream objects so that 

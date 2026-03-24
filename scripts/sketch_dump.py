@@ -1,7 +1,7 @@
 import re
 import FreeCAD as App
 import FreeCADGui as Gui
-from pdfclib.sketchtools import sketch2python
+from cadcoder.sketchtools import sketch2python
 
 
 def parse_args():

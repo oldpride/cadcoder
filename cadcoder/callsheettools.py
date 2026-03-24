@@ -2,10 +2,10 @@
 import json
 import re
 import traceback
-from pdfclib.expressiontools import is_exp_grounded
-from pdfclib.proptools import get_param_value, get_prop_info
-from pdfclib.spreadsheettools import get_cell_list, find_next_row, get_content_by_cellAddr
-from pdfclib.matchtools import match_key_startswith
+from cadcoder.expressiontools import is_exp_grounded
+from cadcoder.proptools import get_param_value, get_prop_info
+from cadcoder.spreadsheettools import get_cell_list, find_next_row, get_content_by_cellAddr
+from cadcoder.matchtools import match_key_startswith
 from pprint import pformat
 
             
@@ -180,7 +180,7 @@ def map_callsheets_relations_using_exp(doc, refreshCache=False):
     callsheet_objs = [obj for obj in doc.Objects if obj.TypeId == 'Spreadsheet::Sheet' and 'callsheet' in obj.Label]    
     callsheet_objNames = [obj.Name for obj in callsheet_objs]
 
-    from pdfclib.expressiontools import get_obj_all_expInfo
+    from cadcoder.expressiontools import get_obj_all_expInfo
     for child_callsheet in callsheet_objs:
         expInfo_by_objProp = get_obj_all_expInfo(doc, 
                                                 child_callsheet, 

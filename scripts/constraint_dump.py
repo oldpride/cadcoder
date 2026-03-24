@@ -3,7 +3,7 @@
 from pdb import main
 import FreeCAD as App
 import FreeCADGui as Gui
-from pdfclib.constrainttools import get_constraints
+from cadcoder.constrainttools import get_constraints
 
 
 def parse_args():

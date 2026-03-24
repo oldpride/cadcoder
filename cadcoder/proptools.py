@@ -7,8 +7,8 @@ from FreeCAD import Vector, Placement, Rotation
 import Sketcher
 from pprint import pformat
 
-from pdfclib.matchtools import match_key_startswith
-from pdfclib.objtools import normalize_label
+from cadcoder.matchtools import match_key_startswith
+from cadcoder.objtools import normalize_label
 
 '''
 how to get the property details in UI so that we can use them in our script?
@@ -483,7 +483,7 @@ def get_prop_info(doc,
         objKey = objName if not useLabel else obj.Label
         objPropKey = f"{objKey}.{propName}"
     
-        from pdfclib.expressiontools import get_expInfo_by_objPropKey # we import here to avoid circular import
+        from cadcoder.expressiontools import get_expInfo_by_objPropKey # we import here to avoid circular import
         exprInfo = get_expInfo_by_objPropKey(doc, objPropKey, useLabel=useLabel)
         if exprInfo is not None:
             info['expInfo'] = exprInfo

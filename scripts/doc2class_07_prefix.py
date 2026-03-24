@@ -30,18 +30,18 @@ from FreeCAD import Vector, Placement
 import json
 from PySide2 import QtWidgets, QtCore
 from pprint import pformat
-from pdfclib.callsheettools import is_callParam
-from pdfclib.importtools import map_importInfo,  compare_import_with_default
-from pdfclib.containertools import get_LCS_map, get_LCS_prefixes, get_container_by_objName
-from pdfclib.expressiontools import get_expInfo_by_objPropKey, sort_objs_exp_dependency
-from pdfclib.logtools import prefix_stack
-from pdfclib.matchtools import match_key_startswith
-from pdfclib.objtools import expand_objects, get_obj_by_objKey, sort_objs_by_downstream, get_obj_str
-from pdfclib.proptools import compare_obj_prop_with_default, get_prop_info, normalize_label, propIsReadonly, get_obj_varname, get_param_value
-from pdfclib.sketchtools import sketch2python
-from pdfclib.spreadsheettools import is_cell_in_sheet
-from pdfclib.subelementtools import get_posName_by_seName
-from pdfclib.uitools import TextDialog
+from cadcoder.callsheettools import is_callParam
+from cadcoder.importtools import map_importInfo,  compare_import_with_default
+from cadcoder.containertools import get_LCS_map, get_LCS_prefixes, get_container_by_objName
+from cadcoder.expressiontools import get_expInfo_by_objPropKey, sort_objs_exp_dependency
+from cadcoder.logtools import prefix_stack
+from cadcoder.matchtools import match_key_startswith
+from cadcoder.objtools import expand_objects, get_obj_by_objKey, sort_objs_by_downstream, get_obj_str
+from cadcoder.proptools import compare_obj_prop_with_default, get_prop_info, normalize_label, propIsReadonly, get_obj_varname, get_param_value
+from cadcoder.sketchtools import sketch2python
+from cadcoder.spreadsheettools import is_cell_in_sheet
+from cadcoder.subelementtools import get_posName_by_seName
+from cadcoder.uitools import TextDialog
 import pdb
 
 debug = 0
@@ -86,7 +86,7 @@ nameMapping = [
 
 def main_part1():
     # main_part1
-    from pdfclib.doctools import recreate_tmp_doc
+    from cadcoder.doctools import recreate_tmp_doc
     doc = recreate_tmp_doc()
 
 def main_part2(doc, myInstance):
@@ -99,7 +99,7 @@ def main_part2(doc, myInstance):
     for obj in top_objects:
         print(f"    name={obj.Name}, label={obj.Label}")
 
-    from pdfclib.doctools import reorganize_doc
+    from cadcoder.doctools import reorganize_doc
     reorganize_doc(doc) 
 
 delayed_expression_by_objProp = {}  # properties with expression need adding in order.
@@ -370,7 +370,7 @@ def add_expressions(doc, useLabel: bool, selection: list, topCallsheetObjs):
 def add_triggers(doc):
     add_method_line('')
     add_method_line("# add trigger objects' expressions")
-    from pdfclib.triggertools import get_trigger_info, triggerVersion
+    from cadcoder.triggertools import get_trigger_info, triggerVersion
     info_by_watchObjPropName_targetObjPropName = get_trigger_info(doc)
     if info_by_watchObjPropName_targetObjPropName:
         imported_triggertools = False
@@ -384,7 +384,7 @@ def add_triggers(doc):
                     print(f"skipping trigger for watchObj.Name={watchObj.Name} Label={watchObj.Label} not in added objects={added_prefixedObjNames}.")
                     continue
                 if not imported_triggertools:
-                    add_method_line('from pdfclib.triggertools import link_watch_to_target')
+                    add_method_line('from cadcoder.triggertools import link_watch_to_target')
                     imported_triggertools = True
                 watchObjName = info['watchObjName']
                 targetObjName = info['targetObjName']
@@ -405,10 +405,10 @@ def export_doc(doc, useLabel: bool, topClassName: str):
     add_script_line('import Part')
     add_script_line('import FreeCAD as App')
     add_script_line('import FreeCADGui as Gui')
-    add_script_line('from pdfclib.baseClass import baseClass')
-    add_script_line('from pdfclib.containertools import get_LCS_by_prefix')
-    add_script_line('from pdfclib.objtools import update_obj_prop_jsonDict')
-    add_script_line('from pdfclib.subelementtools import update_objs_seName, update_doc_seName, get_seName_by_posName')
+    add_script_line('from cadcoder.baseClass import baseClass')
+    add_script_line('from cadcoder.containertools import get_LCS_by_prefix')
+    add_script_line('from cadcoder.objtools import update_obj_prop_jsonDict')
+    add_script_line('from cadcoder.subelementtools import update_objs_seName, update_doc_seName, get_seName_by_posName')
 
     # selection is a subset of doc.Objects, 
     selection = Gui.Selection.getSelection()

@@ -33,7 +33,7 @@ from pprint import pformat
 import re
 from typing import Tuple, Union
 import FreeCAD as App
-from pdfclib.proptools import diff_obj_props
+from cadcoder.proptools import diff_obj_props
 import argparse
 
 def find_object_in_doc_by_objNamePattern(doc, name_pattern):

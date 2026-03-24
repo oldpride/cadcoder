@@ -4,10 +4,10 @@ import FreeCADGui as Gui
 import os
 import sys
 
-from pdfclib.expressiontools import sort_objs_exp_dependency
-from pdfclib.proptools import diff_objPropDicts, get_docObjPropDict, diff_docObjPropDicts
+from cadcoder.expressiontools import sort_objs_exp_dependency
+from cadcoder.proptools import diff_objPropDicts, get_docObjPropDict, diff_docObjPropDicts
 
-# from pdfclib.objtools import recompute_doc
+# from cadcoder.objtools import recompute_doc
 
 prog = os.path.basename(sys.argv[0])
 

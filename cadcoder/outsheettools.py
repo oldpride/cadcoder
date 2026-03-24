@@ -1,8 +1,8 @@
 import traceback
-from pdfclib.spreadsheettools import get_cell_list, set_cellValue_by_propInfo
-from pdfclib.triggertools import link_watch_to_target
-from pdfclib.objtools import get_obj_by_objKey, map_obj_name_label, sort_objs_by_downstream
-from pdfclib.proptools import get_prop_info
+from cadcoder.spreadsheettools import get_cell_list, set_cellValue_by_propInfo
+from cadcoder.triggertools import link_watch_to_target
+from cadcoder.objtools import get_obj_by_objKey, map_obj_name_label, sort_objs_by_downstream
+from cadcoder.proptools import get_prop_info
 import re
 
 row_by_docKey_sheetLabel_varName = {} # {docKey: {sheetLabel: {varName: rowDict}}}

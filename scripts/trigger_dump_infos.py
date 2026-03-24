@@ -3,7 +3,7 @@
 from pdb import main
 import FreeCAD as App
 import FreeCADGui as Gui
-from pdfclib.triggertools import dump_trigger_infos
+from cadcoder.triggertools import dump_trigger_infos
 
 '''
 optional positional argument:

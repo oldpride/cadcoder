@@ -1,6 +1,6 @@
 import FreeCAD as App
 import FreeCADGui as Gui
-from pdfclib.doctools import list_docs
+from cadcoder.doctools import list_docs
 
 def parse_args():
     import argparse

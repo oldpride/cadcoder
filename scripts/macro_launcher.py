@@ -429,7 +429,7 @@ class MacroLauncher(QtWidgets.QDialog):
             # Execute the file as a script (like running it directly)
             # runpy.run_path(path, run_name="__main__", init_globals={"trace_enabled": trace_enabled})
             # runpy.run_path(path, run_name="__main__")
-            from pdfclib.tracetools import trace_file
+            from cadcoder.tracetools import trace_file
             # print(f"trace_file path='{path}', enabled={trace_enabled}")
             trace_file(path, 
                        enabled=trace_enabled, 

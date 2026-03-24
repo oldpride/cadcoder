@@ -1,6 +1,6 @@
 import FreeCAD as App
 import FreeCADGui as Gui    
-from pdfclib.importtools import compare_import_with_default
+from cadcoder.importtools import compare_import_with_default
 
 
 def parse_args():

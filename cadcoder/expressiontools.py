@@ -3,8 +3,8 @@ import re
 import traceback
 import FreeCAD as App
 import FreeCADGui as Gui
-from pdfclib.objtools import get_name_by_label, get_label_by_name, get_obj_by_objKey
-from pdfclib.proptools import get_extended_prop_by_name
+from cadcoder.objtools import get_name_by_label, get_label_by_name, get_obj_by_objKey
+from cadcoder.proptools import get_extended_prop_by_name
 
 '''
 configuration table create a enum property, total needs 3 lines in expression.

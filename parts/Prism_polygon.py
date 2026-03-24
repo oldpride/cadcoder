@@ -4,8 +4,8 @@ import Sketcher
 import Part
 import FreeCAD as App
 import FreeCADGui as Gui
-from pdfclib.baseClass import baseClass
-from pdfclib.containertools import get_LCS_by_prefix
+from cadcoder.baseClass import baseClass
+from cadcoder.containertools import get_LCS_by_prefix
 
 class Prism_polygon(baseClass):
     def __init__(self, instanceName, doc, objPrefix="", useLabel=True, importer=None, prism_polygon_height_spec='0.5 in', horizontalScale=1.1982, prism_polygon_radius_spec='1 in', prism_polygon_sides=8, verticalScale=1.261,  ):
@@ -152,7 +152,7 @@ class Prism_polygon(baseClass):
         constraint_i += 1
         # prism_polygon_sketch.addConstraint(Sketcher.Constraint('Radius', geo[prism_polygon_sides], radius))
         sketch.AttacherEngine = 'Engine Plane'
-        from pdfclib.subelementtools import get_seName_by_posName
+        from cadcoder.subelementtools import get_seName_by_posName
         sketch.AttachmentSupport = (body_XY_Plane, (''))
         body_XY_Plane.Visibility = False  # hide base object
         sketch.MapMode = 'FlatFace'
@@ -186,7 +186,7 @@ class Prism_polygon(baseClass):
 
 def main():
     # main_part1
-    from pdfclib.doctools import recreate_tmp_doc
+    from cadcoder.doctools import recreate_tmp_doc
     doc = recreate_tmp_doc()
     
     # create instance of Prism_polygon
@@ -201,7 +201,7 @@ def main():
     for obj in top_objects:
         print(f"    name={obj.Name}, label={obj.Label}")
     
-    from pdfclib.doctools import reorganize_doc
+    from cadcoder.doctools import reorganize_doc
     reorganize_doc(doc) 
 
 

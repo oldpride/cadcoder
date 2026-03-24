@@ -5,7 +5,7 @@ from pdb import main
 import sys
 import FreeCAD as App
 import FreeCADGui as Gui
-from pdfclib.scaletools import scale_clone
+from cadcoder.scaletools import scale_clone
 
 
 prog= os.path.basename(sys.argv[0])

@@ -6,7 +6,7 @@ from pprint import pformat
 import re
 import FreeCAD as App
 import FreeCADGui as Gui
-from pdfclib.objtools import sort_objs_by_downstream
+from cadcoder.objtools import sort_objs_by_downstream
 
 
 def parse_args():

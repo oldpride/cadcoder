@@ -1,7 +1,7 @@
 from multiprocessing.util import debug
 import FreeCAD as App
 import FreeCADGui as Gui
-from pdfclib.doctools import diff_docs
+from cadcoder.doctools import diff_docs
 import os
 
 program = os.path.basename(__file__)

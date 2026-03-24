@@ -3,10 +3,10 @@ import Sketcher
 import Part
 import FreeCAD as App
 import FreeCADGui as Gui
-from pdfclib.baseClass import baseClass
-from pdfclib.containertools import get_LCS_by_prefix
-from pdfclib.objtools import update_obj_prop_jsonDict
-from pdfclib.subelementtools import update_objs_seName, update_doc_seName, get_seName_by_posName
+from cadcoder.baseClass import baseClass
+from cadcoder.containertools import get_LCS_by_prefix
+from cadcoder.objtools import update_obj_prop_jsonDict
+from cadcoder.subelementtools import update_objs_seName, update_doc_seName, get_seName_by_posName
 
 class Cylinder_hori(baseClass):
     def __init__(self, instanceName, doc, objPrefix="", useLabel=True, importer=None, pad_length_spec='0.5 in', radius_y_spec='0.5 in', horizontalScale=1, verticalScale=1,  ):
@@ -147,7 +147,7 @@ class Cylinder_hori(baseClass):
 
 def main():
     # main_part1
-    from pdfclib.doctools import recreate_tmp_doc
+    from cadcoder.doctools import recreate_tmp_doc
     doc = recreate_tmp_doc()
     
     myInstance = Cylinder_hori("myInstance", doc, objPrefix="", useLabel=True, importer=None, pad_length_spec='0.5 in', radius_y_spec='0.5 in', horizontalScale=1, verticalScale=1, )
@@ -161,7 +161,7 @@ def main():
     for obj in top_objects:
         print(f"    name={obj.Name}, label={obj.Label}")
     
-    from pdfclib.doctools import reorganize_doc
+    from cadcoder.doctools import reorganize_doc
     reorganize_doc(doc) 
 
 

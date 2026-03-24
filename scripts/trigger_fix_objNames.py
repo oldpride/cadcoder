@@ -3,7 +3,7 @@
 from pdb import main
 import FreeCAD as App
 import FreeCADGui as Gui
-from pdfclib.triggertools import trigger_fix_objNames
+from cadcoder.triggertools import trigger_fix_objNames
 
 
 def parse_args():

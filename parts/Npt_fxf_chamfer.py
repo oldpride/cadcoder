@@ -3,10 +3,10 @@ import Sketcher
 import Part
 import FreeCAD as App
 import FreeCADGui as Gui
-from pdfclib.baseClass import baseClass
-from pdfclib.containertools import get_LCS_by_prefix
-from pdfclib.objtools import update_obj_prop_jsonDict
-from pdfclib.subelementtools import update_objs_seName, update_doc_seName, get_seName_by_posName
+from cadcoder.baseClass import baseClass
+from cadcoder.containertools import get_LCS_by_prefix
+from cadcoder.objtools import update_obj_prop_jsonDict
+from cadcoder.subelementtools import update_objs_seName, update_doc_seName, get_seName_by_posName
 
 class Npt_fxf_chamfer(baseClass):
     def __init__(self, instanceName, doc, objPrefix="", useLabel=True, importer=None, b_npt_f_height_spec='0.5 in', b_npt_f_nominalID='`2', b_npt_f_wall_spec='0.08 in', base_plate_thick_spec='0.12 in', holeDiaExpansion_spec='0.03 in', horizontalScale=1.1982, npt_fxf_chamfer_bottom_size_spec='0.04 in', npt_fxf_chamfer_top_size_spec='0.04 in', s_npt_f_height_spec='0.5 in', s_npt_f_nominalID='`3/4', s_npt_f_wall_spec='0.08 in', verticalScale=1.261,  ):
@@ -26,7 +26,7 @@ class Npt_fxf_chamfer(baseClass):
         super().__init__(instanceName, doc, objPrefix=objPrefix, useLabel=useLabel, importer=importer)
         
         # import classes and create instances for directly imported objects
-        from parts.Npt_fxf import Npt_fxf
+        from examples.Npt_fxf import Npt_fxf
         npt_fxf_instance = Npt_fxf('npt_fxf_instance', doc, objPrefix=self.objPrefix + 'npt_fxf_', useLabel=True, importer=self, b_npt_f_height_spec='0.5 in', b_npt_f_nominalID='`2', b_npt_f_wall_spec='0.08 in', base_plate_thick_spec='0.12 in', holeDiaExpansion_spec='0.03 in', horizontalScale=1.1982, s_npt_f_height_spec='0.5 in', s_npt_f_nominalID='`3/4', s_npt_f_wall_spec='0.08 in', verticalScale=1.261, )
         self.npt_fxf_instance = npt_fxf_instance # expose as instance variable
         self.update_imports(npt_fxf_instance) # update import info for the instance
@@ -174,7 +174,7 @@ class Npt_fxf_chamfer(baseClass):
 
 def main():
     # main_part1
-    from pdfclib.doctools import recreate_tmp_doc
+    from cadcoder.doctools import recreate_tmp_doc
     doc = recreate_tmp_doc()
     
     # create instance of Npt_fxf_chamfer
@@ -189,7 +189,7 @@ def main():
     for obj in top_objects:
         print(f"    name={obj.Name}, label={obj.Label}")
     
-    from pdfclib.doctools import reorganize_doc
+    from cadcoder.doctools import reorganize_doc
     reorganize_doc(doc) 
 
 

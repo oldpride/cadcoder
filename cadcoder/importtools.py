@@ -1,8 +1,8 @@
 import re
 import json
-from pdfclib.matchtools import match_key_startswith
-from pdfclib.doctools import diff_docs, recreate_tmp_doc
-from pdfclib.objtools import get_obj_pythonSource, skip_objTypeIdNamePattern
+from cadcoder.matchtools import match_key_startswith
+from cadcoder.doctools import diff_docs, recreate_tmp_doc
+from cadcoder.objtools import get_obj_pythonSource, skip_objTypeIdNamePattern
 import traceback
 import FreeCAD as App
 import FreeCADGui as Gui

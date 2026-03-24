@@ -3,7 +3,7 @@ import Part
 import FreeCAD as App
 import FreeCADGui as Gui
 
-from pdfclib.proptools import propValue2python
+from cadcoder.proptools import propValue2python
 
 
 '''
@@ -97,7 +97,7 @@ def get_internalGeometry_count(
     even the same class, if the parameters are different, the number of internal geometries may be different.
     '''
 
-    from pdfclib.doctools import recreate_tmp_doc
+    from cadcoder.doctools import recreate_tmp_doc
 
     saved_active_doc = App.ActiveDocument
     saved_selection = App.Gui.Selection.getSelection()

@@ -3,10 +3,10 @@ import Sketcher
 import Part
 import FreeCAD as App
 import FreeCADGui as Gui
-from pdfclib.baseClass import baseClass
-from pdfclib.containertools import get_LCS_by_prefix
-from pdfclib.objtools import update_obj_prop_jsonDict
-from pdfclib.subelementtools import update_objs_seName, update_doc_seName, get_seName_by_posName
+from cadcoder.baseClass import baseClass
+from cadcoder.containertools import get_LCS_by_prefix
+from cadcoder.objtools import update_obj_prop_jsonDict
+from cadcoder.subelementtools import update_objs_seName, update_doc_seName, get_seName_by_posName
 
 class Npt_ext(baseClass):
     def __init__(self, instanceName, doc, objPrefix="", useLabel=True, importer=None, bottom_npt_f_femaleOD_wall_spec='2.032 mm', bottom_npt_f_holeDiaExpansion_spec='0.762 mm', horizontalScale=1.1982, middle_cone_height_spec='1 in', middle_cone_wall_spec='0.12 in', top_npt_m_hole_holeDiaExpansion_spec='0.762 mm', top_npt_m_hole_male_height_spec='15.24 mm', top_npt_m_hole_nominalOD='`2', verticalScale=1.261,  ):
@@ -23,12 +23,12 @@ class Npt_ext(baseClass):
         super().__init__(instanceName, doc, objPrefix=objPrefix, useLabel=useLabel, importer=importer)
         
         # import classes and create instances for directly imported objects
-        from parts.Npt_f import Npt_f
+        from examples.Npt_f import Npt_f
         bottom_npt_f_instance = Npt_f('bottom_npt_f_instance', doc, objPrefix=self.objPrefix + 'bottom_npt_f_', useLabel=True, importer=self, femaleOD_wall_spec='0.08 in', female_height_spec='0.6000000000000001 in', holeDiaExpansion_spec='0.030000000000000002 in', horizontalScale=1.1982, nominalID='`2', verticalScale=1.261, )
         self.bottom_npt_f_instance = bottom_npt_f_instance # expose as instance variable
         self.update_imports(bottom_npt_f_instance) # update import info for the instance
         bottom_npt_f_instance.boolean.Visibility = False  # adjust imported object
-        from parts.Npt_m_hole import Npt_m_hole
+        from examples.Npt_m_hole import Npt_m_hole
         top_npt_m_hole_instance = Npt_m_hole('top_npt_m_hole_instance', doc, objPrefix=self.objPrefix + 'top_npt_m_hole_', useLabel=True, importer=self, bottomHoleDepth_spec='0.1 in', bottomHoleDia_spec='2.0706521739130435 in', holeDiaExpansion_spec='0.030000000000000002 in', horizontalScale=1.1982, male_height_spec='0.6000000000000001 in', nominalOD='`2', topHoleDepth_spec='0.5 in', topHoleDia_spec='2.0706521739130435 in', verticalScale=1.261, )
         self.top_npt_m_hole_instance = top_npt_m_hole_instance # expose as instance variable
         self.update_imports(top_npt_m_hole_instance) # update import info for the instance
@@ -315,7 +315,7 @@ class Npt_ext(baseClass):
 
 def main():
     # main_part1
-    from pdfclib.doctools import recreate_tmp_doc
+    from cadcoder.doctools import recreate_tmp_doc
     doc = recreate_tmp_doc()
     
     # create instance of Npt_ext
@@ -330,7 +330,7 @@ def main():
     for obj in top_objects:
         print(f"    name={obj.Name}, label={obj.Label}")
     
-    from pdfclib.doctools import reorganize_doc
+    from cadcoder.doctools import reorganize_doc
     reorganize_doc(doc) 
 
 

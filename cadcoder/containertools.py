@@ -2,7 +2,7 @@
 from pprint import pformat
 import re
 import traceback
-from pdfclib.objtools import get_obj_str
+from cadcoder.objtools import get_obj_str
 
 
 container_by_doc_objName = {}

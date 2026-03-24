@@ -10,11 +10,11 @@ import FreeCAD as App
 import FreeCADGui as Gui
 
 import inspect
-from pdfclib.objtools import get_obj_str, map_obj_name_label
-# from pdfclib.callsheettools import set_varName, get_expObjNames_string, get_impInsts_string
-from pdfclib.containertools import extend_container_with_objects
-from pdfclib.subelementtools import update_doc_seName
-# from pdfclib.subelementtools import update_obj_seName
+from cadcoder.objtools import get_obj_str, map_obj_name_label
+# from cadcoder.callsheettools import set_varName, get_expObjNames_string, get_impInsts_string
+from cadcoder.containertools import extend_container_with_objects
+from cadcoder.subelementtools import update_doc_seName
+# from cadcoder.subelementtools import update_obj_seName
 
 class baseClass:
     def __init__(self, instanceName, doc, objPrefix="", useLabel=True, importer=None):
@@ -235,7 +235,7 @@ class baseClass:
     def get_top_objects(self):
         if self.top_objects is not None:
             return self.top_objects
-        from pdfclib.objtools import get_group_top_objects
+        from cadcoder.objtools import get_group_top_objects
         self.top_objects = get_group_top_objects(objList=self.exportObj_by_objName.values(), visibleOnly=False)
         return self.top_objects
 

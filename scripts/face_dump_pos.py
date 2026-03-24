@@ -5,7 +5,7 @@ from pprint import pformat
 import traceback
 import FreeCAD as App
 import FreeCADGui as Gui
-from pdfclib.subelementtools import dump_pos
+from cadcoder.subelementtools import dump_pos
 
 
 def parse_args():

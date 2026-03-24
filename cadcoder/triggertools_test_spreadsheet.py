@@ -3,7 +3,7 @@ import Sketcher
 import Part
 import FreeCAD as App
 import FreeCADGui as Gui
-from pdfclib.baseClass import baseClass
+from cadcoder.baseClass import baseClass
 
 
 class triggertools_test_spreadsheet(baseClass):
@@ -53,7 +53,7 @@ class triggertools_test_spreadsheet(baseClass):
         triggertools_test_spreadsheet_callsheet.set('myModelTrigger', 'b')
 
         # add triggers
-        from parts.triggertools import link_watch_to_target
+        from examples.triggertools import link_watch_to_target
         # def set_myModel(info, oldValue):
         #     cfgTableSheet.myModel = info['value']
         # set_trigger(doc, triggertools_test_spreadsheet_callsheet, 'myModelTrigger', set_myModel, useLabel=True)
@@ -67,7 +67,7 @@ class triggertools_test_spreadsheet(baseClass):
 
 def main():
     # main_part1
-    from pdfclib.doctools import recreate_tmp_doc
+    from cadcoder.doctools import recreate_tmp_doc
     doc = recreate_tmp_doc()
     
     # create instance of triggertools_test_spreadsheet
@@ -80,7 +80,7 @@ def main():
     top_objects = instance.get_top_objects()
     print(f"instance.top_objects= {pformat(top_objects)}")
     
-    from pdfclib.doctools import reorganize_doc
+    from cadcoder.doctools import reorganize_doc
     reorganize_doc(doc) 
 
 
