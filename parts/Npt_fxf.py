@@ -8,7 +8,7 @@ from cadcoder.containertools import get_LCS_by_prefix
 from cadcoder.objtools import update_obj_prop_jsonDict
 from cadcoder.subelementtools import update_objs_seName, update_doc_seName, get_seName_by_posName
 
-class Npt_fxf(baseClass):
+class npt_fxf(baseClass):
     def __init__(self, instanceName, doc, objPrefix="", useLabel=True, importer=None, b_npt_f_height_spec='0.5 in', b_npt_f_nominalID='`2', b_npt_f_wall_spec='0.08 in', base_plate_thick_spec='0.13 in', holeDiaExpansion_spec='0.03 in', horizontalScale=1.1982, s_npt_f_height_spec='0.5 in', s_npt_f_nominalID='`3/4', s_npt_f_wall_spec='0.08 in', verticalScale=1.261,  ):
         self.b_npt_f_height_spec = b_npt_f_height_spec
         self.b_npt_f_nominalID = b_npt_f_nominalID
@@ -24,13 +24,13 @@ class Npt_fxf(baseClass):
         super().__init__(instanceName, doc, objPrefix=objPrefix, useLabel=useLabel, importer=importer)
         
         # import classes and create instances for directly imported objects
-        from examples.Npt_f import Npt_f
-        b_npt_f_instance = Npt_f('b_npt_f_instance', doc, objPrefix=self.objPrefix + 'b_npt_f_', useLabel=True, importer=self, femaleOD_wall_spec='0.08 in', female_height_spec='0.5 in', holeDiaExpansion_spec='0.03 in', horizontalScale=1.1982, nominalID='`2', verticalScale=1.261, )
+        from parts.npt_f import npt_f
+        b_npt_f_instance = npt_f('b_npt_f_instance', doc, objPrefix=self.objPrefix + 'b_npt_f_', useLabel=True, importer=self, femaleOD_wall_spec='0.08 in', female_height_spec='0.5 in', holeDiaExpansion_spec='0.03 in', horizontalScale=1.1982, nominalID='`2', verticalScale=1.261, )
         self.b_npt_f_instance = b_npt_f_instance # expose as instance variable
         self.update_imports(b_npt_f_instance) # update import info for the instance
         b_npt_f_instance.body.Placement = Placement(Vector(0.0000, -0.0000, 20.1785), Rotation(1.0000, 0.0000, 0.0000, 0.0000))  # adjust imported object
-        from examples.Npt_f import Npt_f
-        s_npt_f_instance = Npt_f('s_npt_f_instance', doc, objPrefix=self.objPrefix + 's_npt_f_', useLabel=True, importer=self, femaleOD_wall_spec='0.08 in', female_height_spec='0.5 in', holeDiaExpansion_spec='0.03 in', nominalID='`3/4', verticalScale=1.261, )
+        from parts.npt_f import npt_f
+        s_npt_f_instance = npt_f('s_npt_f_instance', doc, objPrefix=self.objPrefix + 's_npt_f_', useLabel=True, importer=self, femaleOD_wall_spec='0.08 in', female_height_spec='0.5 in', holeDiaExpansion_spec='0.03 in', nominalID='`3/4', verticalScale=1.261, )
         self.s_npt_f_instance = s_npt_f_instance # expose as instance variable
         self.update_imports(s_npt_f_instance) # update import info for the instance
         
@@ -195,8 +195,8 @@ class Npt_fxf(baseClass):
         
         # add delayed expression property values - values, not expressions, eg, enum value
         
-        # now we have rebuilt the original Npt_fxf doc. Now we apply dynmic call parameters
-        print("there can be temporary errors when we applying dynamic call parameters that change original Npt_fxf's shape.")
+        # now we have rebuilt the original npt_fxf doc. Now we apply dynmic call parameters
+        print("there can be temporary errors when we applying dynamic call parameters that change original npt_fxf's shape.")
         print("ignore temporary errors, if any, below.")
         callsheet.set(callsheet.getCellFromAlias('base_plate_thick_spec'), f'={self.base_plate_thick_spec}')
         callsheet.set(callsheet.getCellFromAlias('horizontalScale'), f'{self.horizontalScale}')
@@ -220,8 +220,8 @@ def main():
     from cadcoder.doctools import recreate_tmp_doc
     doc = recreate_tmp_doc()
     
-    # create instance of Npt_fxf
-    myInstance = Npt_fxf("myInstance", doc, objPrefix="", useLabel=True, importer=None, b_npt_f_height_spec='0.5 in', b_npt_f_nominalID='`2', b_npt_f_wall_spec='0.08 in', base_plate_thick_spec='0.13 in', holeDiaExpansion_spec='0.03 in', horizontalScale=1.1982, s_npt_f_height_spec='0.5 in', s_npt_f_nominalID='`3/4', s_npt_f_wall_spec='0.08 in', verticalScale=1.261, )
+    # create instance of npt_fxf
+    myInstance = npt_fxf("myInstance", doc, objPrefix="", useLabel=True, importer=None, b_npt_f_height_spec='0.5 in', b_npt_f_nominalID='`2', b_npt_f_wall_spec='0.08 in', base_plate_thick_spec='0.13 in', holeDiaExpansion_spec='0.03 in', horizontalScale=1.1982, s_npt_f_height_spec='0.5 in', s_npt_f_nominalID='`3/4', s_npt_f_wall_spec='0.08 in', verticalScale=1.261, )
     
     # main_part2
     from pprint import pformat

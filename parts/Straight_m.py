@@ -8,7 +8,7 @@ from cadcoder.containertools import get_LCS_by_prefix
 from cadcoder.objtools import update_obj_prop_jsonDict
 from cadcoder.subelementtools import update_objs_seName, update_doc_seName, get_seName_by_posName
 
-class Straight_m(baseClass):
+class straight_m(baseClass):
     def __init__(self, instanceName, doc, objPrefix="", useLabel=True, importer=None, height_spec='1 in', holeDiaExpansion_spec='0 mm', horizontalScale=1.1982, pitch_spec='1 mm', radius_spec='0.2 in', verticalScale=1.261,  ):
         self.height_spec = height_spec
         self.holeDiaExpansion_spec = holeDiaExpansion_spec
@@ -244,7 +244,7 @@ def main():
     doc = recreate_tmp_doc()
     
     # create instance of Straight_m
-    myInstance = Straight_m("myInstance", doc, objPrefix="", useLabel=True, importer=None, height_spec='1 in', holeDiaExpansion_spec='0 mm', horizontalScale=1.1982, pitch_spec='1 mm', radius_spec='0.2 in', verticalScale=1.261, )
+    myInstance = straight_m("myInstance", doc, objPrefix="", useLabel=True, importer=None, height_spec='1 in', holeDiaExpansion_spec='0 mm', horizontalScale=1.1982, pitch_spec='1 mm', radius_spec='0.2 in', verticalScale=1.261, )
     
     # main_part2
     from pprint import pformat

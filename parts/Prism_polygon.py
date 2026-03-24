@@ -7,7 +7,7 @@ import FreeCADGui as Gui
 from cadcoder.baseClass import baseClass
 from cadcoder.containertools import get_LCS_by_prefix
 
-class Prism_polygon(baseClass):
+class prism_polygon(baseClass):
     def __init__(self, instanceName, doc, objPrefix="", useLabel=True, importer=None, prism_polygon_height_spec='0.5 in', horizontalScale=1.1982, prism_polygon_radius_spec='1 in', prism_polygon_sides=8, verticalScale=1.261,  ):
         self.horizontalScale = horizontalScale
         self.prism_polygon_height_spec = prism_polygon_height_spec
@@ -190,7 +190,7 @@ def main():
     doc = recreate_tmp_doc()
     
     # create instance of Prism_polygon
-    myInstance = Prism_polygon("myInstance", doc, objPrefix="", useLabel=True, importer=None, prism_polygon_height_spec='0.5 in', horizontalScale=1.1982, prism_polygon_radius_spec='1 in', prism_polygon_sides=8, verticalScale=1.261, )
+    myInstance = prism_polygon("myInstance", doc, objPrefix="", useLabel=True, importer=None, prism_polygon_height_spec='0.5 in', horizontalScale=1.1982, prism_polygon_radius_spec='1 in', prism_polygon_sides=8, verticalScale=1.261, )
     
     # main_part2
     from pprint import pformat

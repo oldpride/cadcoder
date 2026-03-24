@@ -8,7 +8,7 @@ from cadcoder.containertools import get_LCS_by_prefix
 from cadcoder.objtools import update_obj_prop_jsonDict
 from cadcoder.subelementtools import update_objs_seName, update_doc_seName, get_seName_by_posName
 
-class Npt_f(baseClass):
+class npt_f(baseClass):
     def __init__(self, instanceName, doc, objPrefix="", useLabel=True, importer=None, femaleOD_wall_spec='0.08 in', female_height_spec='0.6 in', holeDiaExpansion_spec='0.03 in', horizontalScale=1.1982, nominalID='`1/16', verticalScale=1.261,  ):
         self.femaleOD_wall_spec = femaleOD_wall_spec
         self.female_height_spec = female_height_spec
@@ -20,8 +20,8 @@ class Npt_f(baseClass):
         super().__init__(instanceName, doc, objPrefix=objPrefix, useLabel=useLabel, importer=importer)
         
         # import classes and create instances for directly imported objects
-        from parts.Npt_m import Npt_m
-        npt_m_instance = Npt_m('npt_m_instance', doc, objPrefix=self.objPrefix + 'npt_m_', useLabel=True, importer=self, holeDiaExpansion_spec='0.03 in', horizontalScale=1.1982, male_height_spec='0.6 in', nominalOD='`1/16', verticalScale=1.261, )
+        from parts.npt_m import npt_m
+        npt_m_instance = npt_m('npt_m_instance', doc, objPrefix=self.objPrefix + 'npt_m_', useLabel=True, importer=self, holeDiaExpansion_spec='0.03 in', horizontalScale=1.1982, male_height_spec='0.6 in', nominalOD='`1/16', verticalScale=1.261, )
         self.npt_m_instance = npt_m_instance # expose as instance variable
         self.update_imports(npt_m_instance) # update import info for the instance
         
@@ -161,8 +161,8 @@ class Npt_f(baseClass):
         
         # add delayed expression property values - values, not expressions, eg, enum value
         
-        # now we have rebuilt the original Npt_f doc. Now we apply dynmic call parameters
-        print("there can be temporary errors when we applying dynamic call parameters that change original Npt_f's shape.")
+        # now we have rebuilt the original npt_f doc. Now we apply dynmic call parameters
+        print("there can be temporary errors when we applying dynamic call parameters that change original npt_f's shape.")
         print("ignore temporary errors, if any, below.")
         callsheet.set(callsheet.getCellFromAlias('holeDiaExpansion_spec'), f'={self.holeDiaExpansion_spec}')
         callsheet.set(callsheet.getCellFromAlias('nominalID'), f'{self.nominalID}')
@@ -182,8 +182,8 @@ def main():
     from cadcoder.doctools import recreate_tmp_doc
     doc = recreate_tmp_doc()
     
-    # create instance of Npt_f
-    myInstance = Npt_f("myInstance", doc, objPrefix="", useLabel=True, importer=None, femaleOD_wall_spec='0.08 in', female_height_spec='0.6 in', holeDiaExpansion_spec='0.03 in', horizontalScale=1.1982, nominalID='`1/16', verticalScale=1.261, )
+    # create instance of npt_f
+    myInstance = npt_f("myInstance", doc, objPrefix="", useLabel=True, importer=None, femaleOD_wall_spec='0.08 in', female_height_spec='0.6 in', holeDiaExpansion_spec='0.03 in', horizontalScale=1.1982, nominalID='`1/16', verticalScale=1.261, )
     
     # main_part2
     from pprint import pformat

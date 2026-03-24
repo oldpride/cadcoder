@@ -7,7 +7,7 @@ from cadcoder.baseClass import baseClass
 from cadcoder.containertools import get_LCS_by_prefix
 from cadcoder.objtools import update_obj_prop_jsonDict
 
-class Cylinder(baseClass):
+class cylinder(baseClass):
     def __init__(self, instanceName, doc, objPrefix="", useLabel=True, importer=None, height_spec='0.5 in', radius_spec='0.5 in', horizontalScale=1.1982, verticalScale=1.261,  ):
         self.height_spec = height_spec
         self.radius_spec = radius_spec
@@ -136,7 +136,7 @@ def main():
     doc = recreate_tmp_doc()
     
     # create instance of Cylinder
-    myInstance = Cylinder("myInstance", doc, objPrefix="", useLabel=True, importer=None, height_spec='0.5 in', radius_spec='0.5 in', horizontalScale=1.1982, verticalScale=1.261, )
+    myInstance = cylinder("myInstance", doc, objPrefix="", useLabel=True, importer=None, height_spec='0.5 in', radius_spec='0.5 in', horizontalScale=1.1982, verticalScale=1.261, )
     
     # main_part2
     from pprint import pformat

@@ -8,7 +8,7 @@ from cadcoder.containertools import get_LCS_by_prefix
 from cadcoder.objtools import update_obj_prop_jsonDict
 from cadcoder.subelementtools import update_objs_seName, update_doc_seName, get_seName_by_posName
 
-class Npt_straight_bushing(baseClass):
+class npt_straight_bushing(baseClass):
     def __init__(self, instanceName, doc, objPrefix="", useLabel=True, importer=None, b_OD_shrink_spec='0.02 in', b_male_height_spec='0.5 in', b_nominalOD='`3/4', horizontalScale=1, prism_polygon_height_spec='0.2 in', prism_polygon_sides=6, s_effective_height_spec='0.45 in', s_holeDiaExpansion_spec='0.03 in', s_pitch_spec='0.05 in', s_radius_spec='0.25 in', verticalScale=1,  ):
         self.b_OD_shrink_spec = b_OD_shrink_spec
         self.b_male_height_spec = b_male_height_spec
@@ -25,19 +25,19 @@ class Npt_straight_bushing(baseClass):
         super().__init__(instanceName, doc, objPrefix=objPrefix, useLabel=useLabel, importer=importer)
         
         # import classes and create instances for directly imported objects
-        from parts.Npt_m import Npt_m
-        b_npt_m_instance = Npt_m('b_npt_m_instance', doc, objPrefix=self.objPrefix + 'b_npt_m_', useLabel=True, importer=self, OD_shrink_spec='0.02 in', horizontalScale=1, male_height_spec='0.5 in', nominalOD='`3/4', verticalScale=1, )
+        from parts.npt_m import npt_m
+        b_npt_m_instance = npt_m('b_npt_m_instance', doc, objPrefix=self.objPrefix + 'b_npt_m_', useLabel=True, importer=self, OD_shrink_spec='0.02 in', horizontalScale=1, male_height_spec='0.5 in', nominalOD='`3/4', verticalScale=1, )
         self.b_npt_m_instance = b_npt_m_instance # expose as instance variable
         self.update_imports(b_npt_m_instance) # update import info for the instance
         b_npt_m_instance.body.Placement = Placement(Vector(0.0000, 0.0000, 0.0000), Rotation(1.0000, 0.0000, 0.0000, 0.0000))  # adjust imported object
         b_npt_m_instance.common_boolean.Visibility = False  # adjust imported object
-        from examples.Prism_polygon import Prism_polygon
-        prism_polygon_instance = Prism_polygon('prism_polygon_instance', doc, objPrefix=self.objPrefix + 'prism_polygon_', useLabel=True, importer=self, horizontalScale=1, prism_polygon_height_spec='0.2 in', prism_polygon_radius_spec='0.6408587988004846 in', prism_polygon_sides=6, verticalScale=1, )
+        from parts.prism_polygon import prism_polygon
+        prism_polygon_instance = prism_polygon('prism_polygon_instance', doc, objPrefix=self.objPrefix + 'prism_polygon_', useLabel=True, importer=self, horizontalScale=1, prism_polygon_height_spec='0.2 in', prism_polygon_radius_spec='0.6408587988004846 in', prism_polygon_sides=6, verticalScale=1, )
         self.prism_polygon_instance = prism_polygon_instance # expose as instance variable
         self.update_imports(prism_polygon_instance) # update import info for the instance
         prism_polygon_instance.body.Placement = Placement(Vector(0.0000, 0.0000, -5.0800), Rotation(0.0000, 0.0000, 0.0000, 1.0000))  # adjust imported object
-        from examples.Straight_m import Straight_m
-        s_straight_m_instance = Straight_m('s_straight_m_instance', doc, objPrefix=self.objPrefix + 's_straight_m_', useLabel=True, importer=self, height_spec='0.8 in', holeDiaExpansion_spec='0.03 in', horizontalScale=1, pitch_spec='0.05 in', radius_spec='0.25 in', verticalScale=1, )
+        from parts.straight_m import straight_m
+        s_straight_m_instance = straight_m('s_straight_m_instance', doc, objPrefix=self.objPrefix + 's_straight_m_', useLabel=True, importer=self, height_spec='0.8 in', holeDiaExpansion_spec='0.03 in', horizontalScale=1, pitch_spec='0.05 in', radius_spec='0.25 in', verticalScale=1, )
         self.s_straight_m_instance = s_straight_m_instance # expose as instance variable
         self.update_imports(s_straight_m_instance) # update import info for the instance
         s_straight_m_instance.body.Placement = Placement(Vector(0.0000, 0.0000, -5.0800), Rotation(0.0000, 0.0000, 0.0000, 1.0000))  # adjust imported object
@@ -274,8 +274,8 @@ class Npt_straight_bushing(baseClass):
         
         # add delayed expression property values - values, not expressions, eg, enum value
         
-        # now we have rebuilt the original Npt_straight_bushing doc. Now we apply dynmic call parameters
-        print("there can be temporary errors when we applying dynamic call parameters that change original Npt_straight_bushing's shape.")
+        # now we have rebuilt the original npt_straight_bushing doc. Now we apply dynmic call parameters
+        print("there can be temporary errors when we applying dynamic call parameters that change original npt_straight_bushing's shape.")
         print("ignore temporary errors, if any, below.")
         callsheet.set(callsheet.getCellFromAlias('verticalScale'), f'{self.verticalScale}')
         callsheet.set(callsheet.getCellFromAlias('s_effective_height_spec'), f'={self.s_effective_height_spec}')
@@ -300,8 +300,8 @@ def main():
     from cadcoder.doctools import recreate_tmp_doc
     doc = recreate_tmp_doc()
     
-    # create instance of Npt_straight_bushing
-    myInstance = Npt_straight_bushing("myInstance", doc, objPrefix="", useLabel=True, importer=None, b_OD_shrink_spec='0.02 in', b_male_height_spec='0.5 in', b_nominalOD='`3/4', horizontalScale=1, prism_polygon_height_spec='0.2 in', prism_polygon_sides=6, s_effective_height_spec='0.45 in', s_holeDiaExpansion_spec='0.03 in', s_pitch_spec='0.05 in', s_radius_spec='0.25 in', verticalScale=1, )
+    # create instance of npt_straight_bushing
+    myInstance = npt_straight_bushing("myInstance", doc, objPrefix="", useLabel=True, importer=None, b_OD_shrink_spec='0.02 in', b_male_height_spec='0.5 in', b_nominalOD='`3/4', horizontalScale=1, prism_polygon_height_spec='0.2 in', prism_polygon_sides=6, s_effective_height_spec='0.45 in', s_holeDiaExpansion_spec='0.03 in', s_pitch_spec='0.05 in', s_radius_spec='0.25 in', verticalScale=1, )
     
     # main_part2
     from pprint import pformat

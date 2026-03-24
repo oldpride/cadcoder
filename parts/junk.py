@@ -31,12 +31,12 @@ class Npt_straight_bushing(baseClass):
         self.update_imports(b_npt_m_instance) # update import info for the instance
         b_npt_m_instance.body.Placement = Placement(Vector(0.0000, 0.0000, 0.0000), Rotation(1.0000, 0.0000, 0.0000, 0.0000))  # adjust imported object
         b_npt_m_instance.common_boolean.Visibility = False  # adjust imported object
-        from examples.Prism_polygon import Prism_polygon
+        from parts.Prism_polygon import Prism_polygon
         prism_polygon_instance = Prism_polygon('prism_polygon_instance', doc, objPrefix=self.objPrefix + 'prism_polygon_', useLabel=True, importer=self, horizontalScale=1, prism_polygon_height_spec='0.2 in', prism_polygon_radius_spec='0.6408587988004846 in', prism_polygon_sides=6, verticalScale=1, )
         self.prism_polygon_instance = prism_polygon_instance # expose as instance variable
         self.update_imports(prism_polygon_instance) # update import info for the instance
         prism_polygon_instance.body.Placement = Placement(Vector(0.0000, 0.0000, -5.0800), Rotation(0.0000, 0.0000, 0.0000, 1.0000))  # adjust imported object
-        from examples.Straight_m import Straight_m
+        from parts.Straight_m import Straight_m
         s_straight_m_instance = Straight_m('s_straight_m_instance', doc, objPrefix=self.objPrefix + 's_straight_m_', useLabel=True, importer=self, height_spec='0.8 in', holeDiaExpansion_spec='0.03 in', horizontalScale=1, pitch_spec='0.05 in', radius_spec='0.25 in', verticalScale=1, )
         self.s_straight_m_instance = s_straight_m_instance # expose as instance variable
         self.update_imports(s_straight_m_instance) # update import info for the instance

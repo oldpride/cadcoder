@@ -8,7 +8,7 @@ from cadcoder.containertools import get_LCS_by_prefix
 from cadcoder.objtools import update_obj_prop_jsonDict
 from cadcoder.subelementtools import update_objs_seName, update_doc_seName, get_seName_by_posName
 
-class Cylinder_hori(baseClass):
+class cylinder_hori(baseClass):
     def __init__(self, instanceName, doc, objPrefix="", useLabel=True, importer=None, pad_length_spec='0.5 in', radius_y_spec='0.5 in', horizontalScale=1, verticalScale=1,  ):
         self.pad_length_spec = pad_length_spec
         self.radius_y_spec = radius_y_spec
@@ -150,7 +150,7 @@ def main():
     from cadcoder.doctools import recreate_tmp_doc
     doc = recreate_tmp_doc()
     
-    myInstance = Cylinder_hori("myInstance", doc, objPrefix="", useLabel=True, importer=None, pad_length_spec='0.5 in', radius_y_spec='0.5 in', horizontalScale=1, verticalScale=1, )
+    myInstance = cylinder_hori("myInstance", doc, objPrefix="", useLabel=True, importer=None, pad_length_spec='0.5 in', radius_y_spec='0.5 in', horizontalScale=1, verticalScale=1, )
     
     # main_part2
     from pprint import pformat

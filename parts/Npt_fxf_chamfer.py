@@ -8,7 +8,7 @@ from cadcoder.containertools import get_LCS_by_prefix
 from cadcoder.objtools import update_obj_prop_jsonDict
 from cadcoder.subelementtools import update_objs_seName, update_doc_seName, get_seName_by_posName
 
-class Npt_fxf_chamfer(baseClass):
+class npt_fxf_chamfer(baseClass):
     def __init__(self, instanceName, doc, objPrefix="", useLabel=True, importer=None, b_npt_f_height_spec='0.5 in', b_npt_f_nominalID='`2', b_npt_f_wall_spec='0.08 in', base_plate_thick_spec='0.12 in', holeDiaExpansion_spec='0.03 in', horizontalScale=1.1982, npt_fxf_chamfer_bottom_size_spec='0.04 in', npt_fxf_chamfer_top_size_spec='0.04 in', s_npt_f_height_spec='0.5 in', s_npt_f_nominalID='`3/4', s_npt_f_wall_spec='0.08 in', verticalScale=1.261,  ):
         self.b_npt_f_height_spec = b_npt_f_height_spec
         self.b_npt_f_nominalID = b_npt_f_nominalID
@@ -26,8 +26,8 @@ class Npt_fxf_chamfer(baseClass):
         super().__init__(instanceName, doc, objPrefix=objPrefix, useLabel=useLabel, importer=importer)
         
         # import classes and create instances for directly imported objects
-        from examples.Npt_fxf import Npt_fxf
-        npt_fxf_instance = Npt_fxf('npt_fxf_instance', doc, objPrefix=self.objPrefix + 'npt_fxf_', useLabel=True, importer=self, b_npt_f_height_spec='0.5 in', b_npt_f_nominalID='`2', b_npt_f_wall_spec='0.08 in', base_plate_thick_spec='0.12 in', holeDiaExpansion_spec='0.03 in', horizontalScale=1.1982, s_npt_f_height_spec='0.5 in', s_npt_f_nominalID='`3/4', s_npt_f_wall_spec='0.08 in', verticalScale=1.261, )
+        from parts.npt_fxf import npt_fxf
+        npt_fxf_instance = npt_fxf('npt_fxf_instance', doc, objPrefix=self.objPrefix + 'npt_fxf_', useLabel=True, importer=self, b_npt_f_height_spec='0.5 in', b_npt_f_nominalID='`2', b_npt_f_wall_spec='0.08 in', base_plate_thick_spec='0.12 in', holeDiaExpansion_spec='0.03 in', horizontalScale=1.1982, s_npt_f_height_spec='0.5 in', s_npt_f_nominalID='`3/4', s_npt_f_wall_spec='0.08 in', verticalScale=1.261, )
         self.npt_fxf_instance = npt_fxf_instance # expose as instance variable
         self.update_imports(npt_fxf_instance) # update import info for the instance
         npt_fxf_instance.b_npt_f_instance.body.Placement = Placement(Vector(0.0000, -0.0000, 19.8582), Rotation(1.0000, 0.0000, 0.0000, 0.0000))  # adjust imported object
@@ -150,8 +150,8 @@ class Npt_fxf_chamfer(baseClass):
         
         # add delayed expression property values - values, not expressions, eg, enum value
         
-        # now we have rebuilt the original Npt_fxf_chamfer doc. Now we apply dynmic call parameters
-        print("there can be temporary errors when we applying dynamic call parameters that change original Npt_fxf_chamfer's shape.")
+        # now we have rebuilt the original npt_fxf_chamfer doc. Now we apply dynmic call parameters
+        print("there can be temporary errors when we applying dynamic call parameters that change original npt_fxf_chamfer's shape.")
         print("ignore temporary errors, if any, below.")
         callsheet.set(callsheet.getCellFromAlias('s_npt_f_height_spec'), f'={self.s_npt_f_height_spec}')
         callsheet.set(callsheet.getCellFromAlias('b_npt_f_height_spec'), f'={self.b_npt_f_height_spec}')
@@ -177,8 +177,8 @@ def main():
     from cadcoder.doctools import recreate_tmp_doc
     doc = recreate_tmp_doc()
     
-    # create instance of Npt_fxf_chamfer
-    myInstance = Npt_fxf_chamfer("myInstance", doc, objPrefix="", useLabel=True, importer=None, b_npt_f_height_spec='0.5 in', b_npt_f_nominalID='`2', b_npt_f_wall_spec='0.08 in', base_plate_thick_spec='0.12 in', holeDiaExpansion_spec='0.03 in', horizontalScale=1.1982, npt_fxf_chamfer_bottom_size_spec='0.04 in', npt_fxf_chamfer_top_size_spec='0.04 in', s_npt_f_height_spec='0.5 in', s_npt_f_nominalID='`3/4', s_npt_f_wall_spec='0.08 in', verticalScale=1.261, )
+    # create instance of npt_fxf_chamfer
+    myInstance = npt_fxf_chamfer("myInstance", doc, objPrefix="", useLabel=True, importer=None, b_npt_f_height_spec='0.5 in', b_npt_f_nominalID='`2', b_npt_f_wall_spec='0.08 in', base_plate_thick_spec='0.12 in', holeDiaExpansion_spec='0.03 in', horizontalScale=1.1982, npt_fxf_chamfer_bottom_size_spec='0.04 in', npt_fxf_chamfer_top_size_spec='0.04 in', s_npt_f_height_spec='0.5 in', s_npt_f_nominalID='`3/4', s_npt_f_wall_spec='0.08 in', verticalScale=1.261, )
     
     # main_part2
     from pprint import pformat

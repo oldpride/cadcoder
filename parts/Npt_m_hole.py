@@ -8,7 +8,7 @@ from cadcoder.containertools import get_LCS_by_prefix
 from cadcoder.objtools import update_obj_prop_jsonDict
 from cadcoder.subelementtools import update_objs_seName, update_doc_seName, get_seName_by_posName
 
-class Npt_m_hole(baseClass):
+class npt_m_hole(baseClass):
     def __init__(self, instanceName, doc, objPrefix="", useLabel=True, importer=None, bottomHoleDepth_spec='0.5 in', bottomHoleDia_spec='0.2 in', holeDiaExpansion_spec='0.03 in', horizontalScale=1.1982, male_height_spec='0.6 in', nominalOD='`2', topHoleDepth_spec='0.4 in', topHoleDia_spec='0.3 in', verticalScale=1.261,  ):
         self.bottomHoleDepth_spec = bottomHoleDepth_spec
         self.bottomHoleDia_spec = bottomHoleDia_spec
@@ -23,8 +23,8 @@ class Npt_m_hole(baseClass):
         super().__init__(instanceName, doc, objPrefix=objPrefix, useLabel=useLabel, importer=importer)
         
         # import classes and create instances for directly imported objects
-        from parts.Npt_m import Npt_m
-        npt_m_instance = Npt_m('npt_m_instance', doc, objPrefix=self.objPrefix + 'npt_m_', useLabel=True, importer=self, male_height_spec='0.6 in', nominalOD='`2', )
+        from parts.npt_m import npt_m
+        npt_m_instance = npt_m('npt_m_instance', doc, objPrefix=self.objPrefix + 'npt_m_', useLabel=True, importer=self, male_height_spec='0.6 in', nominalOD='`2', )
         self.npt_m_instance = npt_m_instance # expose as instance variable
         self.update_imports(npt_m_instance) # update import info for the instance
         npt_m_instance.common_boolean.Visibility = False  # adjust imported object
@@ -188,8 +188,8 @@ class Npt_m_hole(baseClass):
         
         # add delayed expression property values - values, not expressions, eg, enum value
         
-        # now we have rebuilt the original Npt_m_hole doc. Now we apply dynmic call parameters
-        print("there can be temporary errors when we applying dynamic call parameters that change original Npt_m_hole's shape.")
+        # now we have rebuilt the original npt_m_hole doc. Now we apply dynmic call parameters
+        print("there can be temporary errors when we applying dynamic call parameters that change original npt_m_hole's shape.")
         print("ignore temporary errors, if any, below.")
         callsheet.set(callsheet.getCellFromAlias('bottomHoleDepth_spec'), f'={self.bottomHoleDepth_spec}')
         callsheet.set(callsheet.getCellFromAlias('nominalOD'), f'{self.nominalOD}')
@@ -212,8 +212,8 @@ def main():
     from cadcoder.doctools import recreate_tmp_doc
     doc = recreate_tmp_doc()
     
-    # create instance of Npt_m_hole
-    myInstance = Npt_m_hole("myInstance", doc, objPrefix="", useLabel=True, importer=None, bottomHoleDepth_spec='0.5 in', bottomHoleDia_spec='0.2 in', holeDiaExpansion_spec='0.03 in', horizontalScale=1.1982, male_height_spec='0.6 in', nominalOD='`2', topHoleDepth_spec='0.4 in', topHoleDia_spec='0.3 in', verticalScale=1.261, )
+    # create instance of npt_m_hole
+    myInstance = npt_m_hole("myInstance", doc, objPrefix="", useLabel=True, importer=None, bottomHoleDepth_spec='0.5 in', bottomHoleDia_spec='0.2 in', holeDiaExpansion_spec='0.03 in', horizontalScale=1.1982, male_height_spec='0.6 in', nominalOD='`2', topHoleDepth_spec='0.4 in', topHoleDia_spec='0.3 in', verticalScale=1.261, )
     
     # main_part2
     from pprint import pformat

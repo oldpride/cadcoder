@@ -5,76 +5,76 @@ import FreeCAD as App
 import FreeCADGui as Gui
 
 
-# from cadcoder.objtools import get_obj_by_objKey, get_obj_str, map_obj_name_label
+from cadcoder.objtools import get_obj_by_objKey, get_obj_str, map_obj_name_label
 
-objNameLabel_by_docKey = {}
+# objNameLabel_by_docKey = {}
 
-def map_obj_name_label(doc, refreshCache=False):
-    # we use docKey to distinguish different docs with same Name because we may have tmp docs with same Name.
-    docKey = f"{doc.Name},{id(doc)}"
+# def map_obj_name_label(doc, refreshCache=False):
+#     # we use docKey to distinguish different docs with same Name because we may have tmp docs with same Name.
+#     docKey = f"{doc.Name},{id(doc)}"
 
-    if not refreshCache and docKey in objNameLabel_by_docKey:
-        return objNameLabel_by_docKey[docKey]  # already mapped
+#     if not refreshCache and docKey in objNameLabel_by_docKey:
+#         return objNameLabel_by_docKey[docKey]  # already mapped
 
-    label_by_name = {}
-    name_by_label = {}
+#     label_by_name = {}
+#     name_by_label = {}
 
-    for obj in doc.Objects:
-        if obj.Label in name_by_label:
-            raise ValueError(f"Duplicate label found: '{obj.Label}' for objects '{name_by_label[obj.Label]}' and '{obj.Name}'")
-        if obj.Name in label_by_name:
-            raise ValueError(f"Duplicate name found: '{obj.Name}' for objects '{label_by_name[obj.Name]}' and '{obj.Label}'")
-        label_by_name[obj.Name] = obj.Label
-        name_by_label[obj.Label] = obj.Name
+#     for obj in doc.Objects:
+#         if obj.Label in name_by_label:
+#             raise ValueError(f"Duplicate label found: '{obj.Label}' for objects '{name_by_label[obj.Label]}' and '{obj.Name}'")
+#         if obj.Name in label_by_name:
+#             raise ValueError(f"Duplicate name found: '{obj.Name}' for objects '{label_by_name[obj.Name]}' and '{obj.Label}'")
+#         label_by_name[obj.Name] = obj.Label
+#         name_by_label[obj.Label] = obj.Name
 
-    objNameLabel_by_docKey[docKey] = {
-        'label_by_name': label_by_name,
-        'name_by_label': name_by_label
-    }
+#     objNameLabel_by_docKey[docKey] = {
+#         'label_by_name': label_by_name,
+#         'name_by_label': name_by_label
+#     }
     
-    return objNameLabel_by_docKey[docKey]
+#     return objNameLabel_by_docKey[docKey]
 
-def get_objRaw_by_objKey(doc, objKey, useLabel):
-    objmap = map_obj_name_label(doc)
-    direction = 'name_by_label' if useLabel else 'label_by_name'
-    if direction not in objmap:
-        # print stack trace  
-        traceback.print_stack()
-        msg = f"missing {direction} in objmap"
-        print(msg)
-        print(f"objmap=\n{pformat(objmap)}")     
-        raise RuntimeError(msg)
-    submap = objmap[direction]
-    if objKey not in submap:
-        traceback.print_stack()
-        msg = f"Cannot find objKey='{objKey}' in objmap[{direction}], useLabel={useLabel}, doc={doc.Name}"
-        print(msg)
-        print(f"objmap[{direction}]=\n{pformat(objmap[direction])}")
-        raise RuntimeError(msg)
-    return submap[objKey]
+# def get_objRaw_by_objKey(doc, objKey, useLabel):
+#     objmap = map_obj_name_label(doc)
+#     direction = 'name_by_label' if useLabel else 'label_by_name'
+#     if direction not in objmap:
+#         # print stack trace  
+#         traceback.print_stack()
+#         msg = f"missing {direction} in objmap"
+#         print(msg)
+#         print(f"objmap=\n{pformat(objmap)}")     
+#         raise RuntimeError(msg)
+#     submap = objmap[direction]
+#     if objKey not in submap:
+#         traceback.print_stack()
+#         msg = f"Cannot find objKey='{objKey}' in objmap[{direction}], useLabel={useLabel}, doc={doc.Name}"
+#         print(msg)
+#         print(f"objmap[{direction}]=\n{pformat(objmap[direction])}")
+#         raise RuntimeError(msg)
+#     return submap[objKey]
 
-def get_name_by_label(doc,objLabel):
-    return get_objRaw_by_objKey(doc, objLabel, useLabel=True)
+# def get_name_by_label(doc,objLabel):
+#     return get_objRaw_by_objKey(doc, objLabel, useLabel=True)
 
-def get_label_by_name(doc, objName):
-    return get_objRaw_by_objKey(doc, objName, useLabel=False)
+# def get_label_by_name(doc, objName):
+#     return get_objRaw_by_objKey(doc, objName, useLabel=False)
 
-def get_obj_by_objKey(doc, objKey, useLabel):
-    if useLabel:
-        objName = get_name_by_label(doc, objKey)
-    else:
-        objName = objKey
-    obj = doc.getObject(objName)
-    if obj is None:
-        msg=f"ERROR: cannot find object with key='{objKey}' (useLabel={useLabel}) objName='{objName}' doc={doc.Name}"
-        print(msg)
-        if useLabel:
-            print(f"Available labels:\n{pformat(list(map_obj_name_label(doc)['name_by_label'].keys()))}")
-        else:
-            print(f"Available names:\n{pformat(list(map_obj_name_label(doc)['label_by_name'].keys()))}")
-        traceback.print_stack()
-        raise RuntimeError(msg)
-    return obj  
+# def get_obj_by_objKey(doc, objKey, useLabel):
+#     if useLabel:
+#         objName = get_name_by_label(doc, objKey)
+#     else:
+#         objName = objKey
+#     obj = doc.getObject(objName)
+#     if obj is None:
+#         msg=f"ERROR: cannot find object with key='{objKey}' (useLabel={useLabel}) objName='{objName}' doc={doc.Name}"
+#         print(msg)
+#         if useLabel:
+#             print(f"Available labels:\n{pformat(list(map_obj_name_label(doc)['name_by_label'].keys()))}")
+#         else:
+#             print(f"Available names:\n{pformat(list(map_obj_name_label(doc)['label_by_name'].keys()))}")
+#         traceback.print_stack()
+#         raise RuntimeError(msg)
+#     return obj  
 
 
 triggerVersion = 1.0 

@@ -53,7 +53,7 @@ class triggertools_test_spreadsheet(baseClass):
         triggertools_test_spreadsheet_callsheet.set('myModelTrigger', 'b')
 
         # add triggers
-        from examples.triggertools import link_watch_to_target
+        from parts.triggertools import link_watch_to_target
         # def set_myModel(info, oldValue):
         #     cfgTableSheet.myModel = info['value']
         # set_trigger(doc, triggertools_test_spreadsheet_callsheet, 'myModelTrigger', set_myModel, useLabel=True)
