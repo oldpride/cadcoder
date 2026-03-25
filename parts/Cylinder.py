@@ -21,7 +21,7 @@ class cylinder(baseClass):
         # add objects and add static value to objects' properties based on object dependencies
         body = doc.addObject('PartDesign::Body', self.addPrefix('body') )
         body.Label = self.addPrefix('body')
-        self.cylinder = body # expose as instance variable using Label varname
+        self.body = body # expose as instance variable using Label varname
         self.post_new_obj(body)
         body_Origin = get_LCS_by_prefix(doc, body, 'Origin') # source objName=Origin
         body_X_Axis = get_LCS_by_prefix(doc, body, 'X_Axis') # source objName=X_Axis
