@@ -9,22 +9,20 @@ from cadcoder.objtools import update_obj_prop_jsonDict
 from cadcoder.subelementtools import update_objs_seName, update_doc_seName, get_seName_by_posName
 
 class npt_m_hole(baseClass):
-    def __init__(self, instanceName, doc, objPrefix="", useLabel=True, importer=None, bottomHoleDepth_spec='0.5 in', bottomHoleDia_spec='0.2 in', holeDiaExpansion_spec='0.03 in', horizontalScale=1.1982, male_height_spec='0.6 in', nominalOD='`2', topHoleDepth_spec='0.4 in', topHoleDia_spec='0.3 in', verticalScale=1.261,  ):
-        self.bottomHoleDepth_spec = bottomHoleDepth_spec
-        self.bottomHoleDia_spec = bottomHoleDia_spec
-        self.holeDiaExpansion_spec = holeDiaExpansion_spec
-        self.horizontalScale = horizontalScale
-        self.male_height_spec = male_height_spec
+    def __init__(self, instanceName, doc, objPrefix="", useLabel=True, importer=None, bottomHoleDepth='0.5 in', bottomHoleDia0='0.2 in', holeDiaExpansion='0.03 in', male_height='0.6 in', nominalOD='`1/2', topHoleDepth='0.4 in', topHoleDia0='0.3 in',  ):
+        self.bottomHoleDepth = bottomHoleDepth
+        self.bottomHoleDia0 = bottomHoleDia0
+        self.holeDiaExpansion = holeDiaExpansion
+        self.male_height = male_height
         self.nominalOD = nominalOD
-        self.topHoleDepth_spec = topHoleDepth_spec
-        self.topHoleDia_spec = topHoleDia_spec
-        self.verticalScale = verticalScale
+        self.topHoleDepth = topHoleDepth
+        self.topHoleDia0 = topHoleDia0
         
         super().__init__(instanceName, doc, objPrefix=objPrefix, useLabel=useLabel, importer=importer)
         
         # import classes and create instances for directly imported objects
         from parts.npt_m import npt_m
-        npt_m_instance = npt_m('npt_m_instance', doc, objPrefix=self.objPrefix + 'npt_m_', useLabel=True, importer=self, male_height_spec='0.6 in', nominalOD='`2', )
+        npt_m_instance = npt_m('npt_m_instance', doc, objPrefix=self.objPrefix + 'npt_m_', useLabel=True, importer=self, male_height='0.6 in', nominalOD='`1/2', )
         self.npt_m_instance = npt_m_instance # expose as instance variable
         self.update_imports(npt_m_instance) # update import info for the instance
         npt_m_instance.common_boolean.Visibility = False  # adjust imported object
@@ -35,54 +33,29 @@ class npt_m_hole(baseClass):
         self.callsheet = callsheet
         self.post_new_obj(callsheet)
         callsheet.set('A1', 'variableName')
-        callsheet.set('A10', 'bottomHoleDepth_spec')
-        callsheet.set('A11', 'bottomHoleDepth')
         callsheet.set('A2', 'nominalOD')
-        callsheet.set('A3', 'horizontalScale')
-        callsheet.set('A4', 'verticalScale')
-        callsheet.set('A5', 'holeDiaExpansion_spec')
-        callsheet.set('A6', 'holeDiaExpansion')
-        callsheet.set('A7', 'male_height_spec')
-        callsheet.set('A8', 'topHoleDepth_spec')
-        callsheet.set('A9', 'topHoleDepth')
+        callsheet.set('A3', 'holeDiaExpansion')
+        callsheet.set('A4', 'male_height')
+        callsheet.set('A5', 'topHoleDepth')
+        callsheet.set('A6', 'bottomHoleDepth')
         callsheet.set('B1', 'value')
-        callsheet.set('B10', '=0.5 in')
-        callsheet.setAlias('B10', 'bottomHoleDepth_spec')
-        callsheet.set('B11', '=0.6305 in')
-        callsheet.setAlias('B11', 'bottomHoleDepth')
-        callsheet.set('B2', '`2')
+        callsheet.set('B2', '`1/2')
         callsheet.setAlias('B2', 'nominalOD')
-        callsheet.set('B3', '1.1982')
-        callsheet.setAlias('B3', 'horizontalScale')
-        callsheet.set('B4', '1.261')
-        callsheet.setAlias('B4', 'verticalScale')
-        callsheet.set('B5', '=0.03 in')
-        callsheet.setAlias('B5', 'holeDiaExpansion_spec')
-        callsheet.set('B6', '=0.035946 in')
-        callsheet.setAlias('B6', 'holeDiaExpansion')
-        callsheet.set('B7', '=0.6 in')
-        callsheet.setAlias('B7', 'male_height_spec')
-        callsheet.set('B8', '=0.4 in')
-        callsheet.setAlias('B8', 'topHoleDepth_spec')
-        callsheet.set('B9', '=0.5044 in')
-        callsheet.setAlias('B9', 'topHoleDepth')
+        callsheet.set('B3', '=0.03 in')
+        callsheet.setAlias('B3', 'holeDiaExpansion')
+        callsheet.set('B4', '=0.6 in')
+        callsheet.setAlias('B4', 'male_height')
+        callsheet.set('B5', '=0.4 in')
+        callsheet.setAlias('B5', 'topHoleDepth')
+        callsheet.set('B6', '=0.5 in')
+        callsheet.setAlias('B6', 'bottomHoleDepth')
         callsheet.set('C1', 'isCallParam')
-        callsheet.set('C10', 'Y')
-        callsheet.set('C11', 'N')
         callsheet.set('C2', 'Y')
         callsheet.set('C3', 'Y')
         callsheet.set('C4', 'Y')
         callsheet.set('C5', 'Y')
-        callsheet.set('C6', 'N')
-        callsheet.set('C7', 'Y')
-        callsheet.set('C8', 'Y')
-        callsheet.set('C9', 'N')
+        callsheet.set('C6', 'Y')
         callsheet.set('D1', 'comment')
-        callsheet.set('D2', 'from npt_m_spec.nominalOD')
-        callsheet.set('D3', 'BASF 17-4 xy scale 1.1982')
-        callsheet.set('D4', 'BASF 17-4 z scale 1.2610')
-        callsheet.set('D5', '0.03 in for 3D print')
-        callsheet.set('D6', 'holeDiaExpansion_spec * horizontalScale')
         callsheet.recompute()  # recompute after adding object
         
         callsheet_hole = doc.addObject('Spreadsheet::Sheet', self.addPrefix('callsheet_hole') )
@@ -90,18 +63,18 @@ class npt_m_hole(baseClass):
         self.callsheet_hole = callsheet_hole
         self.post_new_obj(callsheet_hole)
         callsheet_hole.set('A1', 'variableName')
-        callsheet_hole.set('A2', 'topHoleDia_spec')
+        callsheet_hole.set('A2', 'topHoleDia0')
         callsheet_hole.set('A3', 'topHoleDia')
-        callsheet_hole.set('A4', 'bottomHoleDia_spec')
+        callsheet_hole.set('A4', 'bottomHoleDia0')
         callsheet_hole.set('A5', 'bottomHoleDia')
         callsheet_hole.set('B1', 'value')
         callsheet_hole.set('B2', '=0.3 in')
-        callsheet_hole.setAlias('B2', 'topHoleDia_spec')
-        callsheet_hole.set('B3', '=0.3954059999999999 in')
+        callsheet_hole.setAlias('B2', 'topHoleDia0')
+        callsheet_hole.set('B3', '=0.33 in')
         callsheet_hole.setAlias('B3', 'topHoleDia')
         callsheet_hole.set('B4', '=0.2 in')
-        callsheet_hole.setAlias('B4', 'bottomHoleDia_spec')
-        callsheet_hole.set('B5', '=0.275586 in')
+        callsheet_hole.setAlias('B4', 'bottomHoleDia0')
+        callsheet_hole.set('B5', '=0.23 in')
         callsheet_hole.setAlias('B5', 'bottomHoleDia')
         callsheet_hole.set('C1', 'isCallParam')
         callsheet_hole.set('C2', 'Y')
@@ -116,9 +89,9 @@ class npt_m_hole(baseClass):
         self.top_sketch = top_sketch
         self.post_new_obj(top_sketch)
         self.container_append_object(npt_m_instance.body, top_sketch)
-        geo0 = top_sketch.addGeometry(Part.Circle(Vector(0.0000, 0.0000, 0.0000), Vector (0.0, 0.0, 1.0), 5.0217))
+        geo0 = top_sketch.addGeometry(Part.Circle(Vector(0.0000, 0.0000, 0.0000), Vector (0.0, 0.0, 1.0), 4.1910))
         top_sketch.addConstraint(Sketcher.Constraint('Coincident', geo0, 3, -1, 1))
-        top_sketch.addConstraint(Sketcher.Constraint('Diameter', geo0, 10.0433))
+        top_sketch.addConstraint(Sketcher.Constraint('Diameter', geo0, 8.3820))
         top_sketch.AttacherEngine = 'Engine Plane'
         top_sketch.AttachmentSupport = (npt_m_instance.common_boolean, (get_seName_by_posName(npt_m_instance.common_boolean, 'Face', 'top1')))
         npt_m_instance.common_boolean.Visibility = False  # hide base object
@@ -134,7 +107,7 @@ class npt_m_hole(baseClass):
         self.post_new_obj(top_pocket)
         self.container_append_object(npt_m_instance.body, top_pocket)
         top_pocket.BaseFeature = npt_m_instance.common_boolean
-        top_pocket.Length = 12.81176
+        top_pocket.Length = 10.16
         top_pocket.Profile = (top_sketch, [''])
         top_pocket.ReferenceAxis = (top_sketch, ['N_Axis'])
         top_pocket.Visibility = False
@@ -146,9 +119,9 @@ class npt_m_hole(baseClass):
         self.bottom_sketch = bottom_sketch
         self.post_new_obj(bottom_sketch)
         self.container_append_object(npt_m_instance.body, bottom_sketch)
-        geo0 = bottom_sketch.addGeometry(Part.Circle(Vector(0.0000, 0.0000, 0.0000), Vector (0.0, 0.0, 1.0), 3.4999))
+        geo0 = bottom_sketch.addGeometry(Part.Circle(Vector(0.0000, 0.0000, 0.0000), Vector (0.0, 0.0, 1.0), 2.9210))
         bottom_sketch.addConstraint(Sketcher.Constraint('Coincident', geo0, 3, -1, 1))
-        bottom_sketch.addConstraint(Sketcher.Constraint('Diameter', geo0, 6.9999))
+        bottom_sketch.addConstraint(Sketcher.Constraint('Diameter', geo0, 5.8420))
         bottom_sketch.AttacherEngine = 'Engine Plane'
         bottom_sketch.AttachmentSupport = (top_pocket, (get_seName_by_posName(top_pocket, 'Face', 'bottom1')))
         top_pocket.Visibility = False  # hide base object
@@ -164,7 +137,7 @@ class npt_m_hole(baseClass):
         self.post_new_obj(bottom_pocket)
         self.container_append_object(npt_m_instance.body, bottom_pocket)
         bottom_pocket.BaseFeature = top_pocket
-        bottom_pocket.Length = 16.014699999999998
+        bottom_pocket.Length = 12.7
         bottom_pocket.Profile = (bottom_sketch, [''])
         bottom_pocket.ReferenceAxis = (bottom_sketch, ['N_Axis'])
         bottom_pocket.recompute()  # recompute after adding object
@@ -172,16 +145,13 @@ class npt_m_hole(baseClass):
         # add delayed static property values
         
         # add expressions to object properties based on expression dependencies
-        npt_m_instance.callsheet.set(npt_m_instance.callsheet.getCellFromAlias('male_height_spec'), f"=<<{self.addPrefix('callsheet')}>>.male_height_spec")
         npt_m_instance.callsheet.set(npt_m_instance.callsheet.getCellFromAlias('nominalOD'), f"=<<{self.addPrefix('callsheet')}>>.nominalOD")
-        callsheet.set(callsheet.getCellFromAlias("bottomHoleDepth"), f"=bottomHoleDepth_spec * verticalScale")
-        callsheet.set(callsheet.getCellFromAlias("holeDiaExpansion"), f"=holeDiaExpansion_spec * horizontalScale")
-        callsheet.set(callsheet.getCellFromAlias("topHoleDepth"), f"=topHoleDepth_spec * verticalScale")
-        callsheet_hole.set(callsheet_hole.getCellFromAlias("topHoleDia"), f"=topHoleDia_spec * <<{self.addPrefix('callsheet')}>>.horizontalScale + <<{self.addPrefix('callsheet')}>>.holeDiaExpansion")
-        callsheet_hole.set(callsheet_hole.getCellFromAlias("bottomHoleDia"), f"=bottomHoleDia_spec * <<{self.addPrefix('callsheet')}>>.horizontalScale + <<{self.addPrefix('callsheet')}>>.holeDiaExpansion")
+        npt_m_instance.callsheet.set(npt_m_instance.callsheet.getCellFromAlias('male_height'), f"=<<{self.addPrefix('callsheet')}>>.male_height")
         top_pocket.setExpression("Length", f"<<{self.addPrefix('callsheet')}>>.topHoleDepth")
-        top_sketch.setExpression("Constraints[1]", f"<<{self.addPrefix('callsheet_hole')}>>.topHoleDia")
         bottom_pocket.setExpression("Length", f"<<{self.addPrefix('callsheet')}>>.bottomHoleDepth")
+        callsheet_hole.set(callsheet_hole.getCellFromAlias("topHoleDia"), f"=topHoleDia0 + <<{self.addPrefix('callsheet')}>>.holeDiaExpansion")
+        callsheet_hole.set(callsheet_hole.getCellFromAlias("bottomHoleDia"), f"=bottomHoleDia0 + <<{self.addPrefix('callsheet')}>>.holeDiaExpansion")
+        top_sketch.setExpression("Constraints[1]", f"<<{self.addPrefix('callsheet_hole')}>>.topHoleDia")
         bottom_sketch.setExpression("Constraints[1]", f"<<{self.addPrefix('callsheet_hole')}>>.bottomHoleDia")
         
         # add trigger objects' expressions
@@ -191,15 +161,13 @@ class npt_m_hole(baseClass):
         # now we have rebuilt the original npt_m_hole doc. Now we apply dynmic call parameters
         print("there can be temporary errors when we applying dynamic call parameters that change original npt_m_hole's shape.")
         print("ignore temporary errors, if any, below.")
-        callsheet.set(callsheet.getCellFromAlias('bottomHoleDepth_spec'), f'={self.bottomHoleDepth_spec}')
         callsheet.set(callsheet.getCellFromAlias('nominalOD'), f'{self.nominalOD}')
-        callsheet.set(callsheet.getCellFromAlias('horizontalScale'), f'{self.horizontalScale}')
-        callsheet.set(callsheet.getCellFromAlias('verticalScale'), f'{self.verticalScale}')
-        callsheet.set(callsheet.getCellFromAlias('holeDiaExpansion_spec'), f'={self.holeDiaExpansion_spec}')
-        callsheet.set(callsheet.getCellFromAlias('male_height_spec'), f'={self.male_height_spec}')
-        callsheet.set(callsheet.getCellFromAlias('topHoleDepth_spec'), f'={self.topHoleDepth_spec}')
-        callsheet_hole.set(callsheet_hole.getCellFromAlias('topHoleDia_spec'), f'={self.topHoleDia_spec}')
-        callsheet_hole.set(callsheet_hole.getCellFromAlias('bottomHoleDia_spec'), f'={self.bottomHoleDia_spec}')
+        callsheet.set(callsheet.getCellFromAlias('holeDiaExpansion'), f'={self.holeDiaExpansion}')
+        callsheet.set(callsheet.getCellFromAlias('male_height'), f'={self.male_height}')
+        callsheet.set(callsheet.getCellFromAlias('topHoleDepth'), f'={self.topHoleDepth}')
+        callsheet.set(callsheet.getCellFromAlias('bottomHoleDepth'), f'={self.bottomHoleDepth}')
+        callsheet_hole.set(callsheet_hole.getCellFromAlias('topHoleDia0'), f'={self.topHoleDia0}')
+        callsheet_hole.set(callsheet_hole.getCellFromAlias('bottomHoleDia0'), f'={self.bottomHoleDia0}')
         doc.recompute()
         update_doc_seName(doc, refreshCache=True) # call params may change shape, so we update face/edge names.
         print("ignore temporary errors, if any, above.")
@@ -213,7 +181,7 @@ def main():
     doc = recreate_tmp_doc()
     
     # create instance of npt_m_hole
-    myInstance = npt_m_hole("myInstance", doc, objPrefix="", useLabel=True, importer=None, bottomHoleDepth_spec='0.5 in', bottomHoleDia_spec='0.2 in', holeDiaExpansion_spec='0.03 in', horizontalScale=1.1982, male_height_spec='0.6 in', nominalOD='`2', topHoleDepth_spec='0.4 in', topHoleDia_spec='0.3 in', verticalScale=1.261, )
+    myInstance = npt_m_hole("myInstance", doc, objPrefix="", useLabel=True, importer=None, bottomHoleDepth='0.5 in', bottomHoleDia0='0.2 in', holeDiaExpansion='0.03 in', male_height='0.6 in', nominalOD='`1/2', topHoleDepth='0.4 in', topHoleDia0='0.3 in', )
     
     # main_part2
     from pprint import pformat

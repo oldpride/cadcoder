@@ -196,7 +196,7 @@ def add_expressions(doc, useLabel: bool, selection: list, topCallsheetObjs):
     for obj in import_by_key['directlyImportedObjs']:
         if obj.TypeId != 'Spreadsheet::Sheet':
             continue
-        if obj.Label == 'callsheet':
+        if 'callsheet' in obj.Label:
             if useLabel:
                 directlyImportedCallsheetObjKeys.add(obj.Label)
             else:
@@ -318,7 +318,7 @@ def add_expressions(doc, useLabel: bool, selection: list, topCallsheetObjs):
             # instanceName = import_by_key['instanceName_by_objName'][obj.Name]
             pythonSource = json.loads(obj.pythonSource)
             varName_in_importedInstance = pythonSource['objVarName']
-            if varName_in_importedInstance == 'callsheet' and re.match(r'B[0-9]+', propName):
+            if 'callsheet' in varName_in_importedInstance and re.match(r'B[0-9]+', propName):
                 # a cell property in callsheet spreadsheet can be a call parameter
                 alias = obj.getAlias(propName)
                 if alias is None:
