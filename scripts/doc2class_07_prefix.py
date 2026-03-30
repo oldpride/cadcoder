@@ -541,7 +541,11 @@ def export_doc(doc, useLabel: bool, topClassName: str):
             if not canConvertToPython:
                 add_method_line(f'# object {obj.Name} of type {obj.TypeId} is generated from Python but cannot be converted back to Python. We will skip it, but you may need to handle it manually.')
                 add_method_line(f"raise NotImplementedError('object {obj.Name} of type {obj.TypeId} cannot be converted back to Python. Please handle it manually.')")
-
+                
+                msg = f"Error: object {obj.Name} of type {obj.TypeId} is generated from Python but cannot be converted back to Python. We will skip it, but you may need to handle it manually."
+                print(msg)
+                raise NotImplementedError(msg)
+            
             if importInstanceName in import_by_key['directlyImportedObjs_by_instName']:
                 # this obj is part of the direct import. we have already imported this object above.
                 added_objects.add((obj.TypeId, obj.Name))

@@ -96,53 +96,6 @@ class ReplaceDialog(QtWidgets.QDialog):
     def search(self):
         self.replace(searchOnly=True)
 
-    def search_old(self):
-        old_substring = self.oldInput.text()
-        case_sensitive = self.caseCheck.isChecked()
-        whole_word = self.wholeWordCheck.isChecked()
-        use_regex = self.regexCheck.isChecked()
-
-        if not old_substring:
-            self.resultArea.append("Please enter a substring to search.")
-            return
-
-        doc = App.ActiveDocument
-        if not doc:
-            self.resultArea.append("No active document found.")
-            return
-
-        flags = 0
-        if not case_sensitive:
-            flags |= QtCore.Qt.CaseInsensitive
-
-        self.resultArea.append("")
-        self.resultArea.append(f"------ Searching for '{old_substring}' ------")
-
-        selection = Gui.Selection.getSelection()
-        if not selection:
-            selection = doc.Objects
-
-        for obj in sorted(selection, key=lambda o: o.Label):
-            if hasattr(obj, 'Label'):
-                name = obj.Name
-                label = obj.Label
-                if self.search_substring(old_substring, name, case_sensitive, whole_word, use_regex):
-                    self.resultArea.append(f"Found match in Obj Label='{label}' Name={name}: in name")
-            for propName in obj.PropertiesList:
-                try:
-                    propValue = getattr(obj, propName)
-                except Exception:
-                    continue
-                # search PropName too.
-                if self.search_substring(old_substring, propName, case_sensitive, whole_word, use_regex):
-                    self.resultArea.append(f"Found match in Obj Label='{label}' Name={name} PropName='{propName}': in PropName")
-                matches = self.search_recursively(old_substring, propValue, case_sensitive, whole_word, use_regex)
-                if matches:
-                    self.resultArea.append(f"Found match in Obj Label='{label}' Name={name} PropName='{propName}': in PropValue: {matches}")
-            
-        
-        self.resultArea.append("------ Search complete ------")
-
     def search_recursively(self, old_substring, value, case_sensitive, whole_word, use_regex):
         matches = []
         if isinstance(value, str):
@@ -151,6 +104,15 @@ class ReplaceDialog(QtWidgets.QDialog):
         elif isinstance(value, list) or isinstance(value, tuple):
             for v in value:
                 matches.extend(self.search_recursively(old_substring, v, case_sensitive, whole_word, use_regex))
+        elif isinstance(value, dict):
+            for k, v in value.items():
+                if self.search_substring(old_substring, k, case_sensitive, whole_word, use_regex):
+                    matches.append(k)
+                matches.extend(self.search_recursively(old_substring, v, case_sensitive, whole_word, use_regex))
+        elif 'old_substring' in str(value):  # for other types, convert to string and search
+            if self.search_substring(old_substring, str(value), case_sensitive, whole_word, use_regex):
+                matches.append(str(value))
+        
         return matches
 
     def replace_string(self,
@@ -225,8 +187,12 @@ class ReplaceDialog(QtWidgets.QDialog):
                 name = obj.Name
                 label = obj.Label
                 if self.search_substring(old_substring, name, case_sensitive, whole_word, use_regex):
+                    self.resultArea.append("")
                     self.resultArea.append(f"Found match in Obj Label='{label}' Name={name}: in name; cannot change.")
             for propName in sorted(obj.PropertiesList):
+                if propName in ['pythonSource']:
+                    continue
+
                 # try:
                 #     propValue = getattr(obj, propName)
                 # except Exception:
@@ -236,11 +202,13 @@ class ReplaceDialog(QtWidgets.QDialog):
                 has_match = 0
                 # search PropName too.
                 if self.search_substring(old_substring, propName, case_sensitive, whole_word, use_regex):
+                    self.resultArea.append("")
                     self.resultArea.append(f"Found match in Obj Label='{label}' Name={name} PropName='{propName}': in PropName")
                     has_match = 1
                 matches = self.search_recursively(old_substring, propValue, case_sensitive, whole_word, use_regex)
                 if matches:
                     has_match = 1
+                    self.resultArea.append("")
                     self.resultArea.append(f"Found match in Obj Label='{label}' Name={name} PropName='{propName}': in PropValue: {matches}")
                 
                 if searchOnly or has_match == 0:
