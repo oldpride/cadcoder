@@ -78,53 +78,15 @@ class prism_polygon(baseClass):
                           canConvertToPython=False, # this sketch cannot be converted from doc to python.
                           ) 
 
-        geos = []
-        self.geos = geos
-
-        for i in range(sides):
-            # cos(), sin() in math module use radians!!!
-            # cos(), sin() in freecad expression use degrees!!!
-            theta0 = 2*pi * i / sides
-            theta1 = 2*pi * (i+1) / sides
-            geos.append(sketch.addGeometry(
-                Part.LineSegment(Vector(cos(theta0)*10, sin(theta0)*10, 0), 
-                                 Vector(cos(theta1)*10, sin(theta1)*10, 0))))
-    
-        geos.append(sketch.addGeometry(
-            Part.Circle(Vector(0.0000, 0.0000, 0.0000), Vector (0.0, 0.0, 1.0), 10))) # radius
+        draw_polygon_sketch(sketch, sides=sides)
         
-        sketch.toggleConstruction(geos[sides])
-
-        constraint_i = 0
-        for i in range(sides):
-            j = (i+1) % sides
-            sketch.addConstraint(Sketcher.Constraint('Coincident', geos[i], 2, geos[j], 1))
-            constraint_i += 1
-
-        for i in range(sides-1):
-            sketch.addConstraint(Sketcher.Constraint('Equal', geos[0], geos[i+1]))
-            constraint_i += 1
-
-        for i in range(sides):
-            j = (i+1) % sides
-            sketch.addConstraint(Sketcher.Constraint('PointOnObject', geos[i], 2, geos[sides]))
-            constraint_i += 1
-
-        sketch.addConstraint(Sketcher.Constraint('Coincident', geos[sides], 3, -1, 1))
-        constraint_i += 1
-        sketch.addConstraint(Sketcher.Constraint('PointOnObject', geos[0], 2, -2))
-        constraint_i += 1
-        sketch.addConstraint(Sketcher.Constraint('Radius', geos[sides], 10.0000))
-        radius_constraint_i = constraint_i
-        constraint_i += 1
-
         sketch.AttacherEngine = 'Engine Plane'
         sketch.AttachmentSupport = (body_XY_Plane, (''))
         body_XY_Plane.Visibility = False  # hide base object
         sketch.MapMode = 'FlatFace'
         sketch.Visibility = False
         sketch.ViewObject.Visibility = False
-        sketch.recompute()  # recompute after adding object
+        # sketch.recompute()  # recompute after adding object
         
         pad = doc.addObject('PartDesign::Pad', self.addPrefix('pad') )
         pad.Label = self.addPrefix('pad')
@@ -141,9 +103,11 @@ class prism_polygon(baseClass):
         
         # add expressions to object properties based on expression dependencies
         pad.setExpression("Length", f"<<{self.addPrefix('callsheet')}>>.height")
-        sketch.setExpression(f"Constraints[{radius_constraint_i}]", f"<<{self.addPrefix('callsheet')}>>.radius")
         
         # add trigger objects' expressions
+        from cadcoder.triggertools import link_watch_to_target
+        from cadcoder.triggertools import link_watch_to_target_func
+        link_watch_to_target_func(doc, callsheet, 'sides', sketch, 'parts.prism_polygon', 'draw_polygon_sketch', '{}', useLabel)
         
         # add delayed expression property values - values, not expressions, eg, enum value
         
@@ -159,55 +123,61 @@ class prism_polygon(baseClass):
         
         self.update_callsheet()
 
-    def redraw_sketch(self):
-        # redraw sketch with 4 sides
+    def redraw_sketch(self, sides:int):
+        # redraw if sides changed.
+        if sides == self.sides:
+            return
+        self.sides = sides
         sketch = self.sketch
 
-        # remove existing geometry and constraints
-        constraint_count = len(sketch.Constraints)
-        for i in range(constraint_count):
-            sketch.delConstraint(constraint_count-1-i) # delete constraints in reverse order to avoid messing up constraint indices
-        geo_count = len(sketch.Geometry)        
-        for i in range(geo_count):
-            sketch.delGeometries([geo_count-1-i])
-        
-        self.geos = []
-        sides = 4
-        for i in range(sides):
-            # cos(), sin() in math module use radians!!!
-            # cos(), sin() in freecad expression use degrees!!!
-            theta0 = 2*pi * i / sides
-            theta1 = 2*pi * (i+1) / sides
-            self.geos.append(sketch.addGeometry(
-                Part.LineSegment(Vector(cos(theta0)*10, sin(theta0)*10, 0), 
-                                 Vector(cos(theta1)*10, sin(theta1)*10, 0))))
-        self.geos.append(sketch.addGeometry(
-            Part.Circle(Vector(0.0000, 0.0000, 0.0000), Vector (0.0, 0.0, 1.0), 10))) # radius
-        sketch.toggleConstruction(self.geos[sides])
-        constraint_i = 0
-        for i in range(sides):
-            j = (i+1) % sides
-            sketch.addConstraint(Sketcher.Constraint('Coincident', self.geos[i], 2, self.geos[j], 1))
-            constraint_i += 1
-        for i in range(sides-1):
-            sketch.addConstraint(Sketcher.Constraint('Equal', self.geos[0], self.geos[i+1]))
-            constraint_i += 1
-        for i in range(sides):
-            j = (i+1) % sides
-            sketch.addConstraint(Sketcher.Constraint('PointOnObject', self.geos[i], 2, self.geos[sides]))
-            constraint_i += 1
-        sketch.addConstraint(Sketcher.Constraint('Coincident', self.geos[sides], 3, -1, 1))
-        constraint_i += 1
-        sketch.addConstraint(Sketcher.Constraint('PointOnObject', self.geos[0], 2, -2))
-        constraint_i += 1
-        sketch.addConstraint(Sketcher.Constraint('Radius', self.geos[sides], 10.0000))
-        radius_constraint_i = constraint_i
-        constraint_i += 1
-        sketch.recompute()
-
-        sketch.setExpression(f"Constraints[{radius_constraint_i}]", f"<<{self.addPrefix('callsheet')}>>.radius")
+        draw_polygon_sketch(sketch, sides=sides)
         self.doc.recompute()
-        
+
+def draw_polygon_sketch(sketchObj, sides:int, old_sides:str=None, **opt):   
+    # remove existing geometry and constraints
+    constraint_count = len(sketchObj.Constraints)
+    for i in range(constraint_count):
+        sketchObj.delConstraint(constraint_count-1-i) # delete constraints in reverse order to avoid messing up constraint indices
+    geo_count = len(sketchObj.Geometry)        
+    for i in range(geo_count):
+        sketchObj.delGeometries([geo_count-1-i])
+    
+    geos = []
+    for i in range(sides):
+        # cos(), sin() in math module use radians!!!
+        # cos(), sin() in freecad expression use degrees!!!
+        theta0 = 2*pi * i / sides
+        theta1 = 2*pi * (i+1) / sides
+        geos.append(sketchObj.addGeometry(
+            Part.LineSegment(Vector(cos(theta0)*10, sin(theta0)*10, 0), 
+                                Vector(cos(theta1)*10, sin(theta1)*10, 0))))
+    geos.append(sketchObj.addGeometry(
+        Part.Circle(Vector(0.0000, 0.0000, 0.0000), Vector (0.0, 0.0, 1.0), 10))) # radius
+    sketchObj.toggleConstruction(geos[sides])
+    constraint_i = 0
+    for i in range(sides):
+        j = (i+1) % sides
+        sketchObj.addConstraint(Sketcher.Constraint('Coincident', geos[i], 2, geos[j], 1))
+        constraint_i += 1
+    for i in range(sides-1):
+        sketchObj.addConstraint(Sketcher.Constraint('Equal', geos[0], geos[i+1]))
+        constraint_i += 1
+    for i in range(sides):
+        j = (i+1) % sides
+        sketchObj.addConstraint(Sketcher.Constraint('PointOnObject', geos[i], 2, geos[sides]))
+        constraint_i += 1
+    sketchObj.addConstraint(Sketcher.Constraint('Coincident', geos[sides], 3, -1, 1))
+    constraint_i += 1
+    sketchObj.addConstraint(Sketcher.Constraint('PointOnObject', geos[0], 2, -2))
+    constraint_i += 1
+    sketchObj.addConstraint(Sketcher.Constraint('Radius', geos[sides], 10.0000))
+    radius_constraint_i = constraint_i
+    constraint_i += 1
+    sketchObj.recompute()
+
+    instancePrefix = sketchObj.Label.replace('sketch', '')
+    callsheet_Label = f"{instancePrefix}callsheet"
+    sketchObj.setExpression(f"Constraints[{radius_constraint_i}]", f"<<{callsheet_Label}>>.radius")   
 
 def main():
     # main_part1
@@ -229,7 +199,7 @@ def main():
     from cadcoder.doctools import reorganize_doc
     reorganize_doc(doc) 
 
-    myInstance.redraw_sketch() # redraw sketch with 4 sides
+    myInstance.redraw_sketch(sides=4) # redraw sketch with 4 sides
 
 
 if __name__ == '__main__':

@@ -100,6 +100,7 @@ class TriggeringFeature:
         self.docName = obj.Document.Name
         # self.Object = obj  # Store reference back to object
         self.info_by_watchObjPropName_targetObjPropName = {}
+        self.info_by_watchObjPropName_targetObjFuncArgs = {}
         self.triggerVersion = triggerVersion
         
         
@@ -130,6 +131,36 @@ class TriggeringFeature:
                 if newWatchValue != targetValue:
                     print(f'Setting {targetObjKey}.{targetPropName} to {newWatchValue}')
                     set_prop_value(targetObj, targetPropName, newWatchValue)
+        
+        for watchObjPropName, info_by_targetObjFuncArgs in self.info_by_watchObjPropName_targetObjFuncArgs.items():
+            for targetObjFuncName, info in info_by_targetObjFuncArgs.items():
+                watchObjKey, watchPropName = watchObjPropName.split('.', 1)
+                useLabel = info['useLabel']
+                watchObj = get_obj_by_objKey(doc, watchObjKey, useLabel=useLabel)
+                targetObjKey = info['opt']['targetObjKey']
+                targetObj = get_obj_by_objKey(doc, targetObjKey, useLabel=useLabel)
+                
+                oldWatchValueStr = info['valueStr']
+                newWatchValue = get_prop_value(watchObj, watchPropName)
+                newWatchValueStr = f"{newWatchValue}"
+
+                if newWatchValueStr != oldWatchValueStr:
+                    print(f'Triggered by change in {watchObjPropName} from {oldWatchValueStr} to {newWatchValueStr}')
+                    info['valueStr'] = newWatchValueStr
+                
+                    funcArgs_str = info['opt']['funcArgs']
+                    # convert string to python code.
+                    funcArgs = eval(funcArgs_str) if funcArgs_str else []
+                    moduleName = info['opt']['moduleName']
+                    funcName = info['opt']['funcName']
+
+                    # import module and get function
+                    import importlib
+                    module = importlib.import_module(moduleName)
+                    func = getattr(module, funcName)
+                    print(f"Calling {moduleName}.{funcName} with arguments {funcArgs}")
+                    func(targetObj, newWatchValue, oldWatchValueStr, **funcArgs)
+                
                 
 '''
 triggerObj vs watchObj vs targetObj
@@ -287,6 +318,48 @@ def sync_link(doc):
                 print(f"set target value to match watch value, {targetObj.Name}.{targetPropName}={watchValue}")
                 set_prop_value(targetObj, targetPropName, watchValue)
 
+def link_watch_to_target_func(doc, watchObj, watchPropName, targetObj, moduleName, funcName, funcArgs, useLabel):
+    targetObjKey = targetObj.Label if useLabel else targetObj.Name
+    watchObjKey = watchObj.Label if useLabel else watchObj.Name
+
+    watchObjPropName = f'{watchObjKey}.{watchPropName}'
+    watchPropType = watchObj.getTypeIdOfProperty(watchPropName)
+
+    triggerObj = get_triggerObj(doc)
+
+    updated = 0
+
+    if watchObjPropName not in triggerObj.Proxy.info_by_watchObjPropName_targetObjFuncArgs:
+        updated = 1
+        triggerObj.Proxy.info_by_watchObjPropName_targetObjFuncArgs[watchObjPropName] = {}
+        triggerPropName = watchObjPropName.replace('.', '_')
+        triggerObj.addProperty(watchPropType, triggerPropName, "Base", f"trigger for {watchObjPropName}")
+        triggerObj.setExpression(triggerPropName, watchObjPropName)
+        triggerObj.setEditorMode(triggerPropName, 0)  # Make the property editable in the property editor
+
+    targetObjFuncName = f'{targetObjKey}.{funcName}'
+
+    if targetObjFuncName not in triggerObj.Proxy.info_by_watchObjPropName_targetObjFuncArgs[watchObjPropName]:
+        updated = 1
+        triggerObj.Proxy.info_by_watchObjPropName_targetObjFuncArgs[watchObjPropName][targetObjFuncName]={
+            'valueStr': f"{get_prop_value(watchObj, watchPropName)}", # convert to string to make it json serializable, 
+            'useLabel': useLabel,
+            'watchObjKey': watchObjKey,
+            'watchObjName': watchObj.Name,
+            'watchObjLabel': watchObj.Label,
+            'watchPropName': watchPropName,
+            'watchPropType': watchPropType,
+            'opt': {
+                'targetObjKey': targetObjKey,
+                'funcName': funcName,
+                'moduleName': moduleName,
+                'funcArgs': f"{funcArgs}",
+            }
+        }
+    else:
+        print(f"Link already exists for watch={watchObjKey}.{watchPropName} and target function {targetObjKey}.{funcName}")
+    
+
 def get_prop_value(obj, propName):
     objType = obj.TypeId
     if objType == 'Spreadsheet::Sheet':
@@ -360,8 +433,14 @@ def set_prop_value(obj, propName, value):
 def get_trigger_info(doc):
     triggerObj = get_triggerObj(doc, create=False)
     if triggerObj is None:
-        return {}   
-    return triggerObj.Proxy.info_by_watchObjPropName_targetObjPropName
+        return {}  
+    else:  
+        return {
+            'info_by_watchObjPropName_targetObjPropName': 
+            triggerObj.Proxy.info_by_watchObjPropName_targetObjPropName,
+            'info_by_watchObjPropName_targetObjFuncArgs':
+            triggerObj.Proxy.info_by_watchObjPropName_targetObjFuncArgs,
+        }
     
     
 def dump_trigger_info(doc):

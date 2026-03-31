@@ -371,7 +371,9 @@ def add_triggers(doc):
     add_method_line('')
     add_method_line("# add trigger objects' expressions")
     from cadcoder.triggertools import get_trigger_info, triggerVersion
-    info_by_watchObjPropName_targetObjPropName = get_trigger_info(doc)
+    trigger_info = get_trigger_info(doc)
+    info_by_watchObjPropName_targetObjPropName = trigger_info.get('info_by_watchObjPropName_targetObjPropName', {})
+    info_by_watchObjPropName_targetObjFuncArgs = trigger_info.get('info_by_watchObjPropName_targetObjFuncArgs', {})
     if info_by_watchObjPropName_targetObjPropName:
         imported_triggertools = False
         for watchObjPropName, info_by_targetObjPropName in info_by_watchObjPropName_targetObjPropName.items():
