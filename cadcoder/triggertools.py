@@ -3,79 +3,8 @@ import re
 import traceback
 import FreeCAD as App
 import FreeCADGui as Gui
-
-
 from cadcoder.objtools import get_obj_by_objKey, get_obj_str, map_obj_name_label
-
-# objNameLabel_by_docKey = {}
-
-# def map_obj_name_label(doc, refreshCache=False):
-#     # we use docKey to distinguish different docs with same Name because we may have tmp docs with same Name.
-#     docKey = f"{doc.Name},{id(doc)}"
-
-#     if not refreshCache and docKey in objNameLabel_by_docKey:
-#         return objNameLabel_by_docKey[docKey]  # already mapped
-
-#     label_by_name = {}
-#     name_by_label = {}
-
-#     for obj in doc.Objects:
-#         if obj.Label in name_by_label:
-#             raise ValueError(f"Duplicate label found: '{obj.Label}' for objects '{name_by_label[obj.Label]}' and '{obj.Name}'")
-#         if obj.Name in label_by_name:
-#             raise ValueError(f"Duplicate name found: '{obj.Name}' for objects '{label_by_name[obj.Name]}' and '{obj.Label}'")
-#         label_by_name[obj.Name] = obj.Label
-#         name_by_label[obj.Label] = obj.Name
-
-#     objNameLabel_by_docKey[docKey] = {
-#         'label_by_name': label_by_name,
-#         'name_by_label': name_by_label
-#     }
-    
-#     return objNameLabel_by_docKey[docKey]
-
-# def get_objRaw_by_objKey(doc, objKey, useLabel):
-#     objmap = map_obj_name_label(doc)
-#     direction = 'name_by_label' if useLabel else 'label_by_name'
-#     if direction not in objmap:
-#         # print stack trace  
-#         traceback.print_stack()
-#         msg = f"missing {direction} in objmap"
-#         print(msg)
-#         print(f"objmap=\n{pformat(objmap)}")     
-#         raise RuntimeError(msg)
-#     submap = objmap[direction]
-#     if objKey not in submap:
-#         traceback.print_stack()
-#         msg = f"Cannot find objKey='{objKey}' in objmap[{direction}], useLabel={useLabel}, doc={doc.Name}"
-#         print(msg)
-#         print(f"objmap[{direction}]=\n{pformat(objmap[direction])}")
-#         raise RuntimeError(msg)
-#     return submap[objKey]
-
-# def get_name_by_label(doc,objLabel):
-#     return get_objRaw_by_objKey(doc, objLabel, useLabel=True)
-
-# def get_label_by_name(doc, objName):
-#     return get_objRaw_by_objKey(doc, objName, useLabel=False)
-
-# def get_obj_by_objKey(doc, objKey, useLabel):
-#     if useLabel:
-#         objName = get_name_by_label(doc, objKey)
-#     else:
-#         objName = objKey
-#     obj = doc.getObject(objName)
-#     if obj is None:
-#         msg=f"ERROR: cannot find object with key='{objKey}' (useLabel={useLabel}) objName='{objName}' doc={doc.Name}"
-#         print(msg)
-#         if useLabel:
-#             print(f"Available labels:\n{pformat(list(map_obj_name_label(doc)['name_by_label'].keys()))}")
-#         else:
-#             print(f"Available names:\n{pformat(list(map_obj_name_label(doc)['label_by_name'].keys()))}")
-#         traceback.print_stack()
-#         raise RuntimeError(msg)
-#     return obj  
-
+import hashlib
 
 triggerVersion = 1.0 
 # compatibility check:
@@ -100,7 +29,7 @@ class TriggeringFeature:
         self.docName = obj.Document.Name
         # self.Object = obj  # Store reference back to object
         self.info_by_watchObjPropName_targetObjPropName = {}
-        self.info_by_watchObjPropName_targetObjFuncArgs = {}
+        self.info_by_watchObjPropName_targetObjModFunc = {}
         self.triggerVersion = triggerVersion
         
         
@@ -132,12 +61,12 @@ class TriggeringFeature:
                     print(f'Setting {targetObjKey}.{targetPropName} to {newWatchValue}')
                     set_prop_value(targetObj, targetPropName, newWatchValue)
         
-        for watchObjPropName, info_by_targetObjFuncArgs in self.info_by_watchObjPropName_targetObjFuncArgs.items():
-            for targetObjFuncName, info in info_by_targetObjFuncArgs.items():
+        for watchObjPropName, info_by_targetObjModFunc in self.info_by_watchObjPropName_targetObjModFunc.items():
+            for targetObjModFunc, info in info_by_targetObjModFunc.items():
                 watchObjKey, watchPropName = watchObjPropName.split('.', 1)
                 useLabel = info['useLabel']
                 watchObj = get_obj_by_objKey(doc, watchObjKey, useLabel=useLabel)
-                targetObjKey = info['opt']['targetObjKey']
+                targetObjKey = info['targetObjKey']
                 targetObj = get_obj_by_objKey(doc, targetObjKey, useLabel=useLabel)
                 
                 oldWatchValueStr = info['valueStr']
@@ -148,11 +77,11 @@ class TriggeringFeature:
                     print(f'Triggered by change in {watchObjPropName} from {oldWatchValueStr} to {newWatchValueStr}')
                     info['valueStr'] = newWatchValueStr
                 
-                    funcArgs_str = info['opt']['funcArgs']
+                    funcArgsStr = info['funcArgsStr']
                     # convert string to python code.
-                    funcArgs = eval(funcArgs_str) if funcArgs_str else []
-                    moduleName = info['opt']['moduleName']
-                    funcName = info['opt']['funcName']
+                    funcArgs = eval(funcArgsStr)
+                    moduleName = info['moduleName']
+                    funcName = info['funcName']
 
                     # import module and get function
                     import importlib
@@ -289,7 +218,7 @@ def link_watch_to_target(doc, watchObj, watchPropName, targetObj, targetPropName
         print(f"set target value to match watch value, {targetObjKey}.{targetPropName}={watchPropValue}")
         set_prop_value(targetObj, targetPropName, watchPropValue)
         # doc.recompute() # don't recompute for now as it may cause undesired side effects.
-    return updated
+    return {'updated': updated}
 
 def sync_link(doc):
     # sync the value from the watch object to the target object.
@@ -318,7 +247,14 @@ def sync_link(doc):
                 print(f"set target value to match watch value, {targetObj.Name}.{targetPropName}={watchValue}")
                 set_prop_value(targetObj, targetPropName, watchValue)
 
-def link_watch_to_target_func(doc, watchObj, watchPropName, targetObj, moduleName, funcName, funcArgs, useLabel):
+
+
+def string_to_16byte_key(s: str) -> str:
+    """Convert string to a 16-byte key using MD5 (exactly 16 bytes)."""
+    hash_bytes =  hashlib.md5(s.encode('utf-8')).digest()
+    return str(hash_bytes)
+
+def link_watch_to_target_func(doc, watchObj, watchPropName, targetObj, moduleName, funcName, funcArgsStr, useLabel):
     targetObjKey = targetObj.Label if useLabel else targetObj.Name
     watchObjKey = watchObj.Label if useLabel else watchObj.Name
 
@@ -329,19 +265,21 @@ def link_watch_to_target_func(doc, watchObj, watchPropName, targetObj, moduleNam
 
     updated = 0
 
-    if watchObjPropName not in triggerObj.Proxy.info_by_watchObjPropName_targetObjFuncArgs:
+    if watchObjPropName not in triggerObj.Proxy.info_by_watchObjPropName_targetObjModFunc:
         updated = 1
-        triggerObj.Proxy.info_by_watchObjPropName_targetObjFuncArgs[watchObjPropName] = {}
+        triggerObj.Proxy.info_by_watchObjPropName_targetObjModFunc[watchObjPropName] = {}
         triggerPropName = watchObjPropName.replace('.', '_')
         triggerObj.addProperty(watchPropType, triggerPropName, "Base", f"trigger for {watchObjPropName}")
         triggerObj.setExpression(triggerPropName, watchObjPropName)
         triggerObj.setEditorMode(triggerPropName, 0)  # Make the property editable in the property editor
 
-    targetObjFuncName = f'{targetObjKey}.{funcName}'
+    funcArgsKey = string_to_16byte_key(funcArgsStr)
 
-    if targetObjFuncName not in triggerObj.Proxy.info_by_watchObjPropName_targetObjFuncArgs[watchObjPropName]:
+    targetObjModFunc = f'{targetObjKey},{moduleName},{funcName},{funcArgsKey}'
+
+    if targetObjModFunc not in triggerObj.Proxy.info_by_watchObjPropName_targetObjModFunc[watchObjPropName]:
         updated = 1
-        triggerObj.Proxy.info_by_watchObjPropName_targetObjFuncArgs[watchObjPropName][targetObjFuncName]={
+        triggerObj.Proxy.info_by_watchObjPropName_targetObjModFunc[watchObjPropName][targetObjModFunc]={
             'valueStr': f"{get_prop_value(watchObj, watchPropName)}", # convert to string to make it json serializable, 
             'useLabel': useLabel,
             'watchObjKey': watchObjKey,
@@ -349,16 +287,16 @@ def link_watch_to_target_func(doc, watchObj, watchPropName, targetObj, moduleNam
             'watchObjLabel': watchObj.Label,
             'watchPropName': watchPropName,
             'watchPropType': watchPropType,
-            'opt': {
-                'targetObjKey': targetObjKey,
-                'funcName': funcName,
-                'moduleName': moduleName,
-                'funcArgs': f"{funcArgs}",
-            }
+            'targetObjKey': targetObjKey,
+            'targetObjName': targetObj.Name,
+            'moduleName': moduleName,
+            'funcName': funcName,
+            'funcArgsStr': funcArgsStr,    
         }
     else:
-        print(f"Link already exists for watch={watchObjKey}.{watchPropName} and target function {targetObjKey}.{funcName}")
-    
+        print(f"Link already exists for watch={watchObjKey}.{watchPropName} and targetObjModFunc={targetObjModFunc}")
+
+    return {'updated': updated}
 
 def get_prop_value(obj, propName):
     objType = obj.TypeId
@@ -438,8 +376,8 @@ def get_trigger_info(doc):
         return {
             'info_by_watchObjPropName_targetObjPropName': 
             triggerObj.Proxy.info_by_watchObjPropName_targetObjPropName,
-            'info_by_watchObjPropName_targetObjFuncArgs':
-            triggerObj.Proxy.info_by_watchObjPropName_targetObjFuncArgs,
+            'info_by_watchObjPropName_targetObjModFunc':
+            triggerObj.Proxy.info_by_watchObjPropName_targetObjModFunc,
         }
     
     

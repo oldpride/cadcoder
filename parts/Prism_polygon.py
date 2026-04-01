@@ -74,9 +74,8 @@ class prism_polygon(baseClass):
         sketch = doc.addObject('Sketcher::SketchObject', self.addPrefix('sketch') )
         sketch.Label = self.addPrefix('sketch')
         self.sketch = sketch
-        self.post_new_obj(sketch, 
-                          canConvertToPython=False, # this sketch cannot be converted from doc to python.
-                          ) 
+        self.post_new_obj(sketch)
+        self.container_append_object(body, sketch)
 
         draw_polygon_sketch(sketch, sides=sides)
         
@@ -199,7 +198,7 @@ def main():
     from cadcoder.doctools import reorganize_doc
     reorganize_doc(doc) 
 
-    myInstance.redraw_sketch(sides=4) # redraw sketch with 4 sides
+    # myInstance.redraw_sketch(sides=4) # redraw sketch with 4 sides
 
 
 if __name__ == '__main__':

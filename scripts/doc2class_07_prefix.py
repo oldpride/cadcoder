@@ -373,7 +373,7 @@ def add_triggers(doc):
     from cadcoder.triggertools import get_trigger_info, triggerVersion
     trigger_info = get_trigger_info(doc)
     info_by_watchObjPropName_targetObjPropName = trigger_info.get('info_by_watchObjPropName_targetObjPropName', {})
-    info_by_watchObjPropName_targetObjFuncArgs = trigger_info.get('info_by_watchObjPropName_targetObjFuncArgs', {})
+    info_by_watchObjPropName_targetObjModFunc = trigger_info.get('info_by_watchObjPropName_targetObjModFunc', {})
     if info_by_watchObjPropName_targetObjPropName:
         imported_triggertools = False
         for watchObjPropName, info_by_targetObjPropName in info_by_watchObjPropName_targetObjPropName.items():
@@ -396,6 +396,30 @@ def add_triggers(doc):
                 watchObjPython = use_varname_in_prefixPython(doc, watchObjPython)
                 targetObjPython = use_varname_in_prefixPython(doc, targetObjPython)
                 add_method_line(f"link_watch_to_target(doc, {watchObjPython}, '{watchPropName}', {targetObjPython}, '{targetPropName}', useLabel)")
+    if info_by_watchObjPropName_targetObjModFunc:
+        imported_triggertools = False
+        for watchObjPropName, info_by_targetObjModFunc in info_by_watchObjPropName_targetObjModFunc.items():
+            watchObjKey, watchPropName = watchObjPropName.rsplit('.', 1)
+            for targetObjModFunc, info in info_by_targetObjModFunc.items():
+                useLabel2 = info['useLabel']
+                # only import trigger with watchObj in in added_objNames
+                watchObj = get_obj_by_objKey(doc, watchObjKey, useLabel2)
+                if watchObj.Name not in added_sourceObjNames:
+                    print(f"skipping trigger for watchObj.Name={watchObj.Name} Label={watchObj.Label} not in added objects={added_prefixedObjNames}.")
+                    continue
+                if not imported_triggertools:
+                    add_method_line('from cadcoder.triggertools import link_watch_to_target_func')
+                    imported_triggertools = True
+                watchObjName = info['watchObjName']
+                targetObjName = info['targetObjName']
+                moduleName = info['moduleName']
+                funcName = info['funcName']
+                funcArgsStr = info['funcArgsStr']
+                watchObjPython = f"doc.getObject(self.addPrefix('{watchObjName}'))"
+                targetObjPython = f"doc.getObject(self.addPrefix('{targetObjName}'))"
+                watchObjPython = use_varname_in_prefixPython(doc, watchObjPython)
+                targetObjPython = use_varname_in_prefixPython(doc, targetObjPython)
+                add_method_line(f"link_watch_to_target_func(doc, {watchObjPython}, '{watchPropName}', {targetObjPython}, '{moduleName}', '{funcName}', '{funcArgsStr}', useLabel)")
 
 def export_doc(doc, useLabel: bool, topClassName: str):
     global import_by_key
