@@ -561,16 +561,6 @@ def export_doc(doc, useLabel: bool, topClassName: str):
             importClassName = pythonSource['className']
             importInstanceName = pythonSource['instanceName']
 
-            # some objects generated from Python but we don't know how to convert them
-            # back to Python.
-            canConvertToPython = pythonSource.get('canConvertToPython', True)
-            if not canConvertToPython:
-                add_method_line(f'# object {obj.Name} of type {obj.TypeId} is generated from Python but cannot be converted back to Python. We will skip it, but you may need to handle it manually.')
-                add_method_line(f"raise NotImplementedError('object {obj.Name} of type {obj.TypeId} cannot be converted back to Python. Please handle it manually.')")
-                
-                msg = f"Error: object {obj.Name} of type {obj.TypeId} is generated from Python but cannot be converted back to Python. We will skip it, but you may need to handle it manually."
-                print(msg)
-                raise NotImplementedError(msg)
             
             if importInstanceName in import_by_key['directlyImportedObjs_by_instName']:
                 # this obj is part of the direct import. we have already imported this object above.
@@ -583,8 +573,19 @@ def export_doc(doc, useLabel: bool, topClassName: str):
                 # indirectly_imported_objKeys.add(objKey)
                 added_objects.add((obj.TypeId, obj.Name))
                 continue
-            # else:
+            else:
                 # current class's object with pythonSource, we still need to create it.
+
+                canConvertToPython = pythonSource.get('canConvertToPython', True)
+                if not canConvertToPython:
+                    # some objects generated from Python but we don't know how to convert them
+                 # back to Python
+                    add_method_line(f'# object {obj.Name} of type {obj.TypeId} is generated from Python but cannot be converted back to Python. We will skip it, but you may need to handle it manually.')
+                    add_method_line(f"raise NotImplementedError('object {obj.Name} of type {obj.TypeId} cannot be converted back to Python. Please handle it manually.')")
+                    
+                    msg = f"Error: object {obj.Name} of type {obj.TypeId} is generated from Python but cannot be converted back to Python. We will skip it, but you may need to handle it manually."
+                    print(msg)
+                    raise NotImplementedError(msg)
 
         # now the object is not part of import, we need to create it.
         objVarName = add_object(doc, obj, useLabel, selection)
