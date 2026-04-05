@@ -21,6 +21,7 @@ design consideration:
     - apply import parameters to callsheet by alias name, not by cell address, so that we can easily add/remove cells.
     10. callsheets can be many, named 'callsheet', 'callsheet2', 'callsheet3', ... Only the main callsheet, named 'callsheet', can have callParam (callParam=Y). The other callsheets are needed to avoid using 'hiddenref()' which causes a recompute deadloop.
     Spreadsheet (callsheet) is fast. Extra callsheets will not slow down FreeCAD.
+    11. all expression with computations should be moved to callsheet.
 
 work flow
 

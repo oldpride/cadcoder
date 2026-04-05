@@ -192,16 +192,64 @@ def add_expressions(doc, useLabel: bool, selection: list, topCallsheetObjs):
     
     instanceChain_by_objName = import_by_key['instanceChain_by_objName']
 
-    directlyImportedCallsheetObjKeys = set()
-    for obj in import_by_key['directlyImportedObjs']:
-        if obj.TypeId != 'Spreadsheet::Sheet':
-            continue
-        if 'callsheet' in obj.Label:
-            if useLabel:
-                directlyImportedCallsheetObjKeys.add(obj.Label)
-            else:
-                directlyImportedCallsheetObjKeys.add(obj.Name)
+    directlyImportedCallsheetObjKeys_by_instName = {}
+    for instName, objs in import_by_key['directlyImportedObjs_by_instName'].items():
+        for obj in objs:
+            if obj.TypeId != 'Spreadsheet::Sheet':
+                continue
+            if 'callsheet' in obj.Label:
+                if useLabel:
+                    directlyImportedCallsheetObjKeys_by_instName.setdefault(instName, set()).add(obj.Label)
+                else:
+                    directlyImportedCallsheetObjKeys_by_instName.setdefault(instName, set()).add(obj.Name)
+            
 
+    def depend_on_topCallsheets(expInfo):
+        if len(expInfo['parents']) == 0:
+            return False
+
+        for parentExp in expInfo['parents']:
+            parent_objKey = parentExp.rsplit('.', 1)[0]
+            if parent_objKey in topCallsheetObjKeys:
+                return True
+        return False
+    
+    def depend_on_any_callsheets_in_same_instanceChain(obj, expInfo):
+        if len(expInfo['parents']) == 0:
+            return False
+        
+        instChain = import_by_key['instanceChain_by_objName'][obj.Name]
+        for parentExp in expInfo['parents']:
+            parent_objKey = parentExp.rsplit('.', 1)[0]
+            parent_obj = get_obj_by_objKey(doc, parent_objKey, useLabel)
+            parent_name = parent_obj.Name
+            parent_instChain = import_by_key['instanceChain_by_objName'][parent_name]
+
+            if parent_instChain == instChain:
+                continue
+            return False
+        return True
+
+    def depend_on_directly_imported_callsheets_in_same_instanceChain(obj, expInfo):
+        if len(expInfo['parents']) == 0:
+            return False
+        instName = import_by_key['instanceName_by_objName'][obj.Name]
+        directlyImportedCallsheetObjKeys = directlyImportedCallsheetObjKeys_by_instName.get(instName, set())        
+        for parentExp in expInfo['parents']:
+            parent_objKey = parentExp.rsplit('.', 1)[0]
+            if parent_objKey in directlyImportedCallsheetObjKeys:
+                return True
+        return False
+    
+    def depend_on_myself(objKey, expInfo):
+        if len(expInfo['parents']) == 0:
+            return False
+        for parentExp in expInfo['parents']:
+            parent_objKey = parentExp.rsplit('.', 1)[0]
+            if parent_objKey == objKey:
+                return True
+        return False
+        
     for objPropKey in sort_exps_result['ready_list']:
         # print(f"processing expression for objPropKey={objPropKey}")
         if objPropKey in objProp_already_set_with_call_param:
@@ -224,51 +272,106 @@ def add_expressions(doc, useLabel: bool, selection: list, topCallsheetObjs):
             # print(f"skipping expression for trigger object objKey={objKey} propName={propName}")
             continue
 
+        # now obj is either a top-level object in current class, or a directly imported object. 
         if obj in import_by_key['directlyImportedObjs']:
-            # this is an directly imported object. connect its callsheet with topCallsheet.
+            # this is a directly imported object. 
+            
+            if len(expInfo['parents']) == 0:
+                continue # no dependency, no need to set via callsheet.
 
-            # if this expression 
-            #     depends on the current callsheet, 
-            #     or, owned by an directly imported obj and depends on directly imported callsheet from another imported instance - inter-import,
-            # then we need to set it via topCallsheet.
-            # otherwise, skip it.
-            # print(f"objKey={objKey} is imported, exp={expInfo['expression']}")
-            depend_on_topCallsheets = False
-            for parent in expInfo['parents']:
-                parent_objKey = parent.rsplit('.', 1)[0]
-                # if parent_objKey == topCallsheetObjKey0:
-                if parent_objKey in topCallsheetObjKeys:
-                    depend_on_topCallsheets = True
-                    break
-            if not depend_on_topCallsheets: 
-                if debug:            
-                    print(f"expression for directly imported objKey={objKey} propName={propName}, not depend on topCallsheet, parents={expInfo['parents']}")
-                # check if any parent is from another directly imported callsheet object - inter-import
-                inter_direct_import_dependent = False
-                placement_of_driect_import_obj = False
-                for parent in expInfo['parents']:
-                    parent_objKey = parent.rsplit('.', 1)[0]
-                    if parent_objKey in directlyImportedCallsheetObjKeys:
-                        if propName == 'Placement':
-                            # if the expression is for Placement in a directly imported object, we need it.
-                            placement_of_driect_import_obj = True   
-                            break
-                        myInstanceChain = instanceChain_by_objName[obj.Name]
-                        parent_obj = get_obj_by_objKey(doc, parent_objKey, useLabel)
-                        parentInstanceChain = instanceChain_by_objName[parent_obj.Name]
-                        if myInstanceChain != parentInstanceChain:
-                            inter_direct_import_dependent = True
-                            break
-                if not inter_direct_import_dependent and not placement_of_driect_import_obj:
-                    if debug:            
-                        print(f"expression for directly imported objKey={objKey} propName={propName}, is not inter_direct_import_dependent, parents={expInfo['parents']}. Skipping it.")
-                    continue # skip this expression
-                else:
+            if depend_on_myself(objKey, expInfo):
+                continue # expression depends on itself, eg, between cells in the same spreadsheet.
+
+            '''
+            now that this is a directly imported obj,
+            if the obj is a callsheet, then the expression/property can only depend 
+                1. on top callsheet, 
+                2. or callsheet in the same imported instance. it could be an direct or indirectly imported callsheet, 
+                   but must be in the same imported instance. 
+            if the obj is not a callsheet, then its expression/property can only depend 
+                1. on top callsheet, 
+                2. or directly imported callsheet of the same imported instance.
+            In either case, expression should not depend on other instance's callsheet.
+            '''
+
+            if 'callsheet' in obj.Label:
+                # obj is directly imported callsheet.
+                if depend_on_topCallsheets(expInfo):
                     if debug:
-                        print(f"expression for directly imported objKey={objKey} propName={propName}, is inter_direct_import_dependent, parents={expInfo['parents']}. Will connect.")
+                        print(f"expression for directly imported callsheet objKey={objKey} propName={propName}, depends on topCallsheet, parents={expInfo['parents']}. Will connect.")
+                elif depend_on_any_callsheets_in_same_instanceChain(obj, expInfo):
+                    if debug:
+                        print(f"expression for directly imported callsheet objKey={objKey} propName={propName}, depends on callsheet in the same instanceChain, parents={expInfo['parents']}. no work needed.")
+                        continue
+                else:
+                    msg = f"Error: expression for directly imported callsheet objKey={objKey} propName={propName} depends on other callsheets that are not in the same instanceChain or topCallsheet, parents={expInfo['parents']}. This is not allowed."
+                    print(msg)
+                    raise RuntimeError(msg)
             else:
-                if debug:
-                    print(f"expression for directly imported objKey={objKey} propName={propName}, depends on topCallsheet, parents={expInfo['parents']}. Will connect.")
+                # obj is directly imported but is not a callsheet.
+                if depend_on_topCallsheets(expInfo):
+                    if debug:
+                        print(f"expression for directly imported objKey={objKey} propName={propName}, depends on topCallsheet, parents={expInfo['parents']}. Will connect.")
+                elif depend_on_directly_imported_callsheets_in_same_instanceChain(obj, expInfo):
+                    if debug:
+                        print(f"expression for directly imported objKey={objKey} propName={propName}, depends on directly imported callsheet in the same instanceChain, parents={expInfo['parents']}. no work needed.")
+                    continue
+                else:
+                    msg = f"Error: expression for directly imported objKey={objKey} propName={propName} depends on other callsheets that are not in the same instance or topCallsheet, parents={expInfo['parents']}. This is not allowed."
+                    print(msg)
+                    raise RuntimeError(msg)
+
+
+
+
+
+            # # if this expression 
+            # #     depends on the current callsheet, 
+            # #     or, owned by an directly imported obj and depends on directly imported callsheet from another imported instance - inter-import,
+            # # then we need to set it via topCallsheet.
+            # # otherwise, skip it.
+            # # print(f"objKey={objKey} is imported, exp={expInfo['expression']}")
+            # depend_on_topCallsheets = False
+            # for parent in expInfo['parents']:
+            #     parent_objKey = parent.rsplit('.', 1)[0]
+            #     # if parent_objKey == topCallsheetObjKey0:
+            #     if parent_objKey in topCallsheetObjKeys:
+            #         depend_on_topCallsheets = True
+            #         break
+            # if not depend_on_topCallsheets: 
+            #     # directly imported object's expression can only depend on top callsheet, not other directly imported objects.
+            #     # this is to enforece code streamlining and concentrate all relations into callsheet.
+            #     # print(f"expression for directly imported objKey={objKey} propName={propName}, does not depend on topCallsheets, parents={expInfo['parents']}. skip")
+            #     # continue
+
+            #     if debug:            
+            #         print(f"expression for directly imported objKey={objKey} propName={propName}, not depend on topCallsheet, parents={expInfo['parents']}")
+            #     # check if any parent is from another directly imported callsheet object - inter-import
+            #     inter_direct_import_dependent = False
+            #     placement_of_driect_import_obj = False
+            #     for parent in expInfo['parents']:
+            #         parent_objKey = parent.rsplit('.', 1)[0]
+            #         if parent_objKey in directlyImportedCallsheetObjKeys:
+            #             if propName == 'Placement':
+            #                 # if the expression is for Placement in a directly imported object, we need it.
+            #                 placement_of_driect_import_obj = True   
+            #                 break
+            #             myInstanceChain = instanceChain_by_objName[obj.Name]
+            #             parent_obj = get_obj_by_objKey(doc, parent_objKey, useLabel)
+            #             parentInstanceChain = instanceChain_by_objName[parent_obj.Name]
+            #             if myInstanceChain != parentInstanceChain:
+            #                 inter_direct_import_dependent = True
+            #                 break
+            #     if not inter_direct_import_dependent and not placement_of_driect_import_obj:
+            #         if debug:            
+            #             print(f"expression for directly imported objKey={objKey} propName={propName}, is not inter_direct_import_dependent, parents={expInfo['parents']}. Skipping it.")
+            #         continue # skip this expression
+            #     else:
+            #         if debug:
+            #             print(f"expression for directly imported objKey={objKey} propName={propName}, is inter_direct_import_dependent, parents={expInfo['parents']}. Will connect.")
+            # else:
+            #     if debug:
+            #         print(f"expression for directly imported objKey={objKey} propName={propName}, depends on topCallsheet, parents={expInfo['parents']}. Will connect.")
             instanceName = import_by_key['instanceName_by_objName'][obj.Name]
             instanceChain = import_by_key['instanceChain_by_objName'][obj.Name]
 
