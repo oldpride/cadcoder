@@ -1001,31 +1001,104 @@ def str_mm_to_in(mm_str: str) -> str:
         return mm_str
 
 
-def get_param_value(
+def get_prop_value_str_repr(
         propInfo,    # propInfo
-        isForFuncParam, # is this used as a function parameter or a cell value
-                     # if isFuncParam is True, numberic value should not be quoted.
-                     # else, it should be quoted.
+        targetFuncParam, # will this be used as a function parameter or a cell value
+                     # if True, numberic value should not be quoted. eg
+                     #     npt_m(scaleFactor=2)
+                     # else, it should be quoted. eg
+                     #     callsheet.set('A1', '2')
+        targetSpreadsheetCell, 
+                    # will this be used as a spreadsheet cell value. 
+                    # if True, we need to add "=" for non-string values, 
+                    #   so that spreadsheet can recognize the type and not treat it as string.
+                    # if False, we don't need to add "=" because the property already 
+                    #   has a defined type, and we will pass the value in its native type 
+                    #   (e.g. float, bool) instead of string.
+
         preferInchUnit, # if True, convert Quantity in mm to in
         ) -> str: # always return a string becuase we will use it in generated code (string).
-    pass
 
     '''
+    get the string representation of the property value, for use in generated code (string).
+
+    in spreadsheet cell, always use quotes
+        callsheet.set('A1', 'variableName')   # string
+        callsheet.set('B3', '`2')             # string - use backtick to force it to be string.
+        callsheet.set('B4', '=0.08 in')       # quantity - need quotes; use "=" to indicate it's not a string.
+        callsheet.set('B3', '=True')          # boolean - need quotes; use "=" to indicate it's not a string.
+        callsheet.set('B3', '1.01 ')          # float - need quotes; no need "=".
+        callsheet.set('B3', '5')              # int   - need quotes; no need "=".
+    
+    in object property, only string needs quotes
+        body.myScale = 1.2
+        body.myLength = "5.0 in"
+        body.Placement = Placement(Vector(0.0000, -0.0000, 16.0020), Rotation(1.0000, 0.0000, 0.0000, 0.0000))
+        body.Group = [doc.getObject(self.addPrefix('b_npt_f_sketch')), doc.getObject(self.addPrefix('b_npt_f_pad'))]       
+    
+    Property doesn't need "=" in value because property's type is defined when created.
+    Spreadsheet cesll needs "=" for certain types because it otherwise won't know the type.
+
+    we need to pay attention to the source of the prop and destination of the string value.
+    source of prop:
+        - spreadsheet cell
+        - spreadsheet alias
+        - object property
+    destination of the string value:
+        - spreadsheet cell content
+        - object property value code
+        - function parameter in generated code
+   
+    examples:
+        for spreadsheet cells, pay attention to the cellContent.
+
+    example of a boolean:
+      added: MainObject-A1
+        Object value:
+          propType: App::PropertyPythonObject
+          propValue: True
+          readonly: True
+          valueClass: bool
+          valueClassTree: {'bool'}
+          valueObjName: None
+          valuePython: True
+          valueTypeId: None
+          cellAlias: None
+          cellContent: =True
+          expInfo:
+                    {'expression': 'True',
+                     'grounded': False,
+                     'parents': ['Spreadsheet.True'],
+                     'prefixedExp': 'True',
+                     'rawExpression': 'True',
+                     'source': 'SpreadsheetCell',
+                     'varName': 'A1'}
+          prefixPython: True
+          propName: A1
+
     example of a pure number, eg, float
-        added: MainObject-B3
-            Object value:
-            propType: App::PropertyFloat
-            propValue: 1.1982
-            valueTypeId: None
-            valueClass: float
-            valueClassTree: {'float'}
-            valueObjName: None
-            readonly: True
-            valuePython: 1.1982
-            propName: B3
-            prefixPython: 1.1982
-            cellContent: 1.1982
-            cellAlias: horizontalScale
+      added: MainObject-A1
+        Object value:
+          propType: App::PropertyPythonObject
+          propValue: True
+          readonly: True
+          valueClass: bool
+          valueClassTree: {'bool'}
+          valueObjName: None
+          valuePython: True
+          valueTypeId: None
+          cellAlias: None
+          cellContent: =True
+          expInfo:
+                    {'expression': 'True',
+                     'grounded': False,
+                     'parents': ['Spreadsheet.True'],
+                     'prefixedExp': 'True',
+                     'rawExpression': 'True',
+                     'source': 'SpreadsheetCell',
+                     'varName': 'A1'}
+          prefixPython: True
+          propName: A1
 
     example of a Quantity with unit, 
     note that propValue is 2.032 mm while cellContent is =0.08 in.
@@ -1051,7 +1124,57 @@ def get_param_value(
                             'prefixedExp': '0.08 in',
                             'rawExpression': '0.08 in',
                             'source': 'SpreadsheetCell'}
+    example of a cell using expression. 
+        note that the cellContent and propValue are different.
+      added: MainObject-A5
+        Object value:
+          propType: Spreadsheet::PropertySpreadsheetQuantity
+          propValue: 129.54 mm
+          readonly: True
+          valueClass: Quantity
+          valueClassTree: {'Quantity'}
+          valueObjName: None
+          valuePython: 129.54
+          valueTypeId: None
+          cellAlias: None
+          cellContent: =myLength + 0.1 in
+          expInfo:
+                    {'expression': 'myLength + 0.1 in',
+                     'grounded': False,
+                     'parents': ['Spreadsheet.myLength
+                     '],
+                     'prefixedExp': 'myLength + 0.1 in',
+                     'rawExpression': 'myLength + 0.1 in',
+                     'source': 'SpreadsheetCell',
+                     'varName': 'A5'}
+          prefixPython: 129.54
+          propName: A5
                         
+    example of a property whose value is an complex object:
+        modified: MainObject-Placement
+            Object value:
+            propType: App::PropertyPlacement
+            propValue: Placement [Pos=(0,-0,16.002), Yaw-Pitch-Roll=(0,0,180)]
+            readonly: False
+            valueClass: Placement
+            valueClassTree: {'Placement'}
+            valueObjName: None
+            valuePython: Placement(Vector(0.0000, -0.0000, 16.0020), Rotation(1.0000, 0.0000, 0.0000, 0.0000))
+            valueTypeId: None
+            expInfo:
+                        {'comment': 'ExpressionEngine expressions are all ungrounded',
+                        'expression': '<<callsheet>>.base_plate_thick + <<callsheet>>.b_npt_f_height',
+                        'grounded': False,
+                        'parents': ['callsheet.b_npt_f_height', 'callsheet.base_plate_thick'],
+                        'prefixedExp': "<<{self.addPrefix('callsheet')}>>.base_plate_thick + "
+                                        "<<{self.addPrefix('callsheet')}>>.b_npt_f_height",
+                        'rawExpression': 'callsheet.base_plate_thick + callsheet.b_npt_f_height',
+                        'source': 'ExpressionEngine',
+                        'varName': '.Placement.Base.z',
+                        'varType': 'Base'}
+            prefixPython: Placement(Vector(0.0000, -0.0000, 16.0020), Rotation(1.0000, 0.0000, 0.0000, 0.0000))
+            propName: Placement
+    
     example of an expression depending on other cells:
         added: MainObject-B6
             Object value:
@@ -1074,54 +1197,71 @@ def get_param_value(
                             'prefixedExp': "femaleOD_wall * 2 + <<{self.addPrefix('npt_m_spec')}>>.RealOD",
                             'rawExpression': 'femaleOD_wall * 2 + <<npt_m_spec>>.RealOD',
                             'source': 'SpreadsheetCell'}
+
+    example of a property whose value has a list of complex objects:                           
+      modified: MainObject-Group
+        Object value:
+          propType: App::PropertyLinkList
+          propValue: [<Sketcher::SketchObject>, <PartDesign::Pad>, <PartDesign::Boolean>]
+          readonly: False
+          valueClass: list
+          valueClassTree: {'list/Feature', 'list/SketchObject'}
+          valueObjName: None
+          valuePython: [doc.getObject('b_npt_f_sketch'), doc.getObject('b_npt_f_pad'), doc.getObject('b_npt_f_boolean')]
+          valueTypeId: None
+          prefixPython: [doc.getObject(self.addPrefix('b_npt_f_sketch')), doc.getObject(self.addPrefix('b_npt_f_pad')), doc.getObject(self.addPrefix('b_npt_f_boolean'))]
+          propName: Group
+                
     '''
     valueClass = propInfo['valueClass']
-    if valueClass == 'float' or valueClass == 'int' or valueClass == 'bool':
-        if isForFuncParam:
-            return str(propInfo['propValue'])
-        else:
-            return f"'{propInfo['propValue']}'"
-    elif valueClass == 'str':
-        # return f"'{propInfo['propValue']}'"
-        # escape single quote
-        escaped_propValue = propInfo['propValue'].replace("'", "\\'")
-        return f"'{escaped_propValue}'"
-    elif valueClass == 'Quantity':
-        # Quantity always needs to be quoted, because it has a unit. eg '0.08 in'
-        if isForFuncParam:
-            equal_sign = ''
-        else:
-            equal_sign = '='
 
-        if 'cellContent' in propInfo:
-            # source is from spreadsheet cell,
-            grounded = False
-            try:
-                expInfo = propInfo['expInfo']
-            except KeyError:
-                # when running get_obj_all_expInfo() with includeGrounded=False,
-                # 'expInfo' will be missing for grounded expression.
-                msg = f"propInfo {propInfo['propName']} missing expInfo. likely a grounded expression."
-                print(msg)
-                grounded = True
+    value_str_repr = f"{propInfo['propValue']}"
 
-            if grounded or propInfo['expInfo']['grounded']:
-                # grounded expression, use cellContent, eg, =0.08 in
-                # we prefer cellContent over propValue because cellContent preserves the unit.
-                # '0.08 in' vs '2.032 mm'
-                return f"'{equal_sign}{propInfo['cellContent'].lstrip('=')}'"
-            else:
-                # ungrounded expression, use propValue,
-                # even though it loses unit, but at least it is a static value; it will
-                # be overridden later when expression is set.
-                if preferInchUnit:
-                    in_str = str_mm_to_in(propInfo['propValue'])
-                    return f"'{equal_sign}{in_str}'"
-                else:
-                    return f"'{equal_sign}{propInfo['propValue']}'"
+    # first handle the source of the prop value.
+    if 'cellContent' in propInfo:
+        # source of the prop is a spreadsheet cell.
+        # spreadsheet cell' valueClass can only be bool, Quantity, float, int, or str.
+        if valueClass in ['bool', 'Quantity']:
+            # spreadsheet cell uses "=" in cellContent to indicate it's a bool or Quantity.
+            # remove the leading "=" if exists
+            value_str_repr = value_str_repr.lstrip('=')
+
+    # then handle the target of the string value.
+    # f-string or not - if string value contains "{}", we use f-string for safe.
+    if re.search(r'\{.+\}', value_str_repr):
+        f = "f"
+    else:
+        f = ""
+
+    if targetSpreadsheetCell:
+        # target is spreadsheet cell, we always need to quote the value as string.
+        # spreadsheet will recognize the type based on the content of the string.
+        if valueClass in ['bool', 'Quantity']:
+            # for spreadsheet cell, we need to add "=" for bool and Quantity, 
+            # so that spreadsheet can recognize the type and not treat it as string.
+            if valueClass == 'Quantity' and preferInchUnit:
+                value_str_repr = str_mm_to_in(value_str_repr)
+                
+            value_str_repr = f"{f}\'={value_str_repr}\'"  
         else:
-            # source is not from spreadsheet cell, use propValue
-            return f"'{equal_sign}{propInfo['propValue']}'"
+            value_str_repr = f"{f}\'{value_str_repr}\'"
+    else:
+        # target is not a spreadsheet cell, we don't always need to quote the value
+        if valueClass in ['bool', 'int', 'float']:
+            value_str_repr = f"{value_str_repr}"
+        elif valueClass == 'str':
+            # escape single quote
+            value_str_repr = value_str_repr.replace("'", "\\'")
+            value_str_repr = f"{f}\'{value_str_repr}\'"
+        elif valueClass == 'Quantity' and preferInchUnit:
+            value_str_repr = str_mm_to_in(value_str_repr)
+            value_str_repr = f"\'{value_str_repr}\'"
+        else:
+            # objects
+            value_str_repr = propInfo['prefixPython']
+
+    return value_str_repr
+    
 
 def get_extended_prop_by_name(obj, anyName):
     '''

@@ -28,8 +28,7 @@ class npt_fxf_chamfer(baseClass):
         npt_fxf_instance = npt_fxf('npt_fxf_instance', doc, objPrefix=self.objPrefix + 'npt_fxf_', useLabel=True, importer=self, b_npt_f_height='0.5 in', b_npt_f_nominalID='`1-1/4', b_npt_f_wall='0.08 in', base_plate_thick='0.12 in', holeDiaExpansion='0.03 in', s_npt_f_height='0.5 in', s_npt_f_nominalID='`3/4', s_npt_f_wall='0.08 in', )
         self.npt_fxf_instance = npt_fxf_instance # expose as instance variable
         self.update_imports(npt_fxf_instance) # update import info for the instance
-        npt_fxf_instance.b_npt_f_instance.body.Placement = Placement(Vector(0.0000, -0.0000, 15.7480), Rotation(1.0000, 0.0000, 0.0000, 0.0000))  # adjust imported object
-        npt_fxf_instance.boolean.Visibility = False  # adjust imported object
+        npt_fxf_instance.boolean.Visibility = False
         
         # add objects and add static value to objects' properties based on object dependencies
         callsheet = doc.addObject('Spreadsheet::Sheet', self.addPrefix('callsheet') )

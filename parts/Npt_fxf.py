@@ -26,7 +26,8 @@ class npt_fxf(baseClass):
         b_npt_f_instance = npt_f('b_npt_f_instance', doc, objPrefix=self.objPrefix + 'b_npt_f_', useLabel=True, importer=self, diaExpansion='0.03 in', femaleOD_wall='0.08 in', female_height='0.5 in', nominalID='`2', )
         self.b_npt_f_instance = b_npt_f_instance # expose as instance variable
         self.update_imports(b_npt_f_instance) # update import info for the instance
-        b_npt_f_instance.body.Placement = Placement(Vector(0.0000, -0.0000, 16.0020), Rotation(1.0000, 0.0000, 0.0000, 0.0000))  # adjust imported object
+        # suggestion: link this property to callsheet
+        b_npt_f_instance.body.Placement = Placement(Vector(0.0000, -0.0000, 16.0020), Rotation(1.0000, 0.0000, 0.0000, 0.0000))
         from parts.npt_f import npt_f
         s_npt_f_instance = npt_f('s_npt_f_instance', doc, objPrefix=self.objPrefix + 's_npt_f_', useLabel=True, importer=self, diaExpansion='0.03 in', femaleOD_wall='0.08 in', female_height='0.5 in', nominalID='`3/4', )
         self.s_npt_f_instance = s_npt_f_instance # expose as instance variable
@@ -102,6 +103,24 @@ class npt_fxf(baseClass):
         callsheet.set('D1', 'comment')
         callsheet.recompute()  # recompute after adding object
         
+        callsheet2 = doc.addObject('Spreadsheet::Sheet', self.addPrefix('callsheet2') )
+        callsheet2.Label = self.addPrefix('callsheet2')
+        self.callsheet2 = callsheet2
+        self.post_new_obj(callsheet2)
+        callsheet2.set('A1', 'variableName')
+        callsheet2.set('A2', 'base_plate_OD')
+        callsheet2.set('A3', 'base_plate_ID')
+        callsheet2.set('B1', 'value')
+        callsheet2.set('B2', '=2.565 in')
+        callsheet2.setAlias('B2', 'base_plate_OD')
+        callsheet2.set('B3', '=1.24 in')
+        callsheet2.setAlias('B3', 'base_plate_ID')
+        callsheet2.set('C1', 'isCallParam')
+        callsheet2.set('C2', 'N')
+        callsheet2.set('C3', 'N')
+        callsheet2.set('D1', 'comment')
+        callsheet2.recompute()  # recompute after adding object
+        
         ketch = doc.addObject('Sketcher::SketchObject', self.addPrefix('ketch') )
         ketch.Label = self.addPrefix('ketch')
         self.ketch = ketch
@@ -151,13 +170,15 @@ class npt_fxf(baseClass):
         s_npt_f_instance.callsheet.set(s_npt_f_instance.callsheet.getCellFromAlias('femaleOD_wall'), f"=<<{self.addPrefix('callsheet')}>>.s_npt_f_wall")
         s_npt_f_instance.callsheet.set(s_npt_f_instance.callsheet.getCellFromAlias('female_height'), f"=<<{self.addPrefix('callsheet')}>>.s_npt_f_height")
         s_npt_f_instance.callsheet.set(s_npt_f_instance.callsheet.getCellFromAlias('diaExpansion'), f"=<<{self.addPrefix('callsheet')}>>.holeDiaExpansion")
-        b_npt_f_instance.body.setExpression('.Placement.Base.z', f"<<{self.addPrefix('callsheet')}>>.base_plate_thick + <<{self.addPrefix('callsheet')}>>.b_npt_f_height")
+        b_npt_f_instance.body.setExpression('.Placement.Base.z', f"{self.addPrefix('callsheet')}.base_plate_thick + {self.addPrefix('callsheet')}.b_npt_f_height")
         b_npt_f_instance.callsheet.set(b_npt_f_instance.callsheet.getCellFromAlias('nominalID'), f"=<<{self.addPrefix('callsheet')}>>.b_npt_f_nominalID")
         b_npt_f_instance.callsheet.set(b_npt_f_instance.callsheet.getCellFromAlias('femaleOD_wall'), f"=<<{self.addPrefix('callsheet')}>>.b_npt_f_wall")
         b_npt_f_instance.callsheet.set(b_npt_f_instance.callsheet.getCellFromAlias('female_height'), f"=<<{self.addPrefix('callsheet')}>>.b_npt_f_height")
         b_npt_f_instance.callsheet.set(b_npt_f_instance.callsheet.getCellFromAlias('diaExpansion'), f"=<<{self.addPrefix('callsheet')}>>.holeDiaExpansion")
-        ketch.setExpression("Constraints[2]", f"<<{self.addPrefix('b_npt_f_callsheet')}>>.femaleOD")
-        ketch.setExpression("Constraints[3]", f"<<{self.addPrefix('s_npt_f_callsheet')}>>.femaleOD")
+        callsheet2.set(callsheet2.getCellFromAlias("base_plate_OD"), f"=<<{self.addPrefix('b_npt_f_callsheet')}>>.femaleOD")
+        ketch.setExpression("Constraints[2]", f"<<{self.addPrefix('callsheet2')}>>.base_plate_OD")
+        callsheet2.set(callsheet2.getCellFromAlias("base_plate_ID"), f"=<<{self.addPrefix('s_npt_f_callsheet')}>>.femaleOD")
+        ketch.setExpression("Constraints[3]", f"<<{self.addPrefix('callsheet2')}>>.base_plate_ID")
         
         # add trigger objects' expressions
         

@@ -30,10 +30,9 @@ class baseClass:
         self.importInst_by_instName = {}
         
         self.className = self.__class__.__name__  # returns child class name
-        self.moduleName = f"parts.{self.className}" # hardcoded module name, todo
+        self.moduleName = f"parts.{self.className}" # hardcoded module name
  
         # print(f"\n\nclassName={self.className}\n\n")
-        
         self.instanceId = id(self)
         self.instanceName = instanceName
 
@@ -43,41 +42,33 @@ class baseClass:
         self.lastShapeObj = None
         self.lastImportInstance = None
 
-        # if self.importer is not None:
-        #     if isinstance(self.importer, dict):
-        #         self.importerClassName = self.importer['className']
-        #         self.importerInstanceId = self.importer['instanceId']
-        #         self.importerInstanceChain = self.importer['instanceChain']
-        #         self.importerInstanceName = self.importer['instanceName']
-        #     else:  
-        #         self.importerClassName = self.importer.className
-        #         self.importerInstanceId = self.importer.instanceId 
-        #         self.importerInstanceChain = self.importer.instanceChain
-        #         self.importerInstanceName = self.importer.instanceName
-        # else:
-        #     self.importerClassName = ""
-        #     self.importerInstanceId = ""
-        #     self.importerInstanceChain = ""
-        #     self.importerInstanceName = ""
-        # if self.importer is not None and isinstance(self.importer, dict):
         if self.importer is not None:
-            self.importerClassName = self.importer.className
-            self.importerInstanceId = self.importer.instanceId 
-            self.importerInstanceChain = self.importer.instanceChain
-            self.importerInstanceName = self.importer.instanceName
+            if isinstance(self.importer, dict):
+                self.importerClassName = self.importer['className']
+                self.importerInstanceId = self.importer['instanceId']
+                self.importerInstanceChain = self.importer['instanceChain']
+                self.importerInstanceName = self.importer['instanceName']
+            else:  
+                self.importerClassName = self.importer.className
+                self.importerInstanceId = self.importer.instanceId 
+                self.importerInstanceChain = self.importer.instanceChain
+                self.importerInstanceName = self.importer.instanceName
         else:
-            self.importerClassName = None
-            self.importerInstanceId = None
-            self.importerInstanceChain = None
-            self.importerInstanceName = None
-
+            self.importerClassName = ""
+            self.importerInstanceId = ""
+            self.importerInstanceChain = ""
+            self.importerInstanceName = ""
         
         if self.importerInstanceChain is None or self.importerInstanceChain == "":
             self.instanceChain = self.instanceName
         else:
             self.instanceChain = f"{self.importerInstanceChain}.{self.instanceName}"
         
+        # save the importer call parameters for later use, 
+        #     such as when we need to generate the python code for this instance.
         # get the call signature of our child (caller) class's caller
+        #     eg, if caller is npt_f.__init__, then we want to get the call signature of 
+        #     npt_f.__init__'s caller, which is the code that creates npt_f instance.
         # traceback.print_stack()
         import_call_frame = inspect.currentframe().f_back
         import_call_argvalues = inspect.getargvalues(import_call_frame)
@@ -93,27 +84,12 @@ class baseClass:
         import_call_params = import_call_argvalues.locals.copy()
 
         if 'importer' in import_call_params:
-            # importer will be saved in json so that we can generate import code.
-
-            # delete keys that are not part of import function parameters.
-            # import function is like:
-            #     b_npt_f_instance = npt_f('b_npt_f_instance', doc, objPrefix=self.objPrefix + 'b_npt_f_', useLabel=True, importer=self, diaExpansion='0.03 in', nominalID='`2', )
             del import_call_params['self']
             del import_call_params['__class__']
             if self.className in import_call_params:
                 del import_call_params[self.className]
-
-            # we cannot keep doc and importer in the import_call_params
-            # because they will make import_call_params not json-able.
-            # therefore, we use a string placeholder for them, and the actual
-            # doc and importer will be passed separately when we use import_call_params.
-            # import_call_params['doc'] = 'doc_placeholder'
-            # import_call_params['importer'] = 'importer_placeholder'
-            # 2026/04/27 delete the key instead of using placeholder, 
-            # because we will pass the actual doc and importer separately when we use import_call_params.
-            for key in [ 'doc', 'importer']:
-                if key in import_call_params:
-                    del import_call_params[key]
+            import_call_params['doc'] = 'doc_placeholder'
+            import_call_params['importer'] = 'importer_placeholder'
     
             # using json vs using repr vs using original python dict for importerCallParams:
             #     we use json when we save the whole pythonSource into a property.
@@ -212,8 +188,6 @@ class baseClass:
             'objPrefix':self.objPrefix,        
             }
         # convert dict to json string
-
-        # print(f"info={pformat(info)}")
         
         obj.pythonSource = json.dumps(info, indent=4, sort_keys=True)        
         

@@ -3,7 +3,7 @@ import json
 import re
 import traceback
 from cadcoder.expressiontools import is_exp_grounded
-from cadcoder.proptools import get_param_value, get_prop_info
+from cadcoder.proptools import get_prop_info
 from cadcoder.spreadsheettools import get_cell_list, find_next_row, get_content_by_cellAddr
 from cadcoder.matchtools import match_key_startswith
 from pprint import pformat
@@ -182,13 +182,14 @@ def map_callsheets_relations_using_exp(doc, refreshCache=False):
 
     from cadcoder.expressiontools import get_obj_all_expInfo
     for child_callsheet in callsheet_objs:
-        expInfo_by_objProp = get_obj_all_expInfo(doc, 
+        expInfo_by_propName = get_obj_all_expInfo(doc, 
                                                 child_callsheet, 
                                                 useLabel=False, # use objName because our other mappings are by obj.Name
                                                 # includeGrounded=False, # skip grounded expressions, eg, =10, =tan(1.7899)
+                                                refreshCache=refreshCache,
                                                 )
-        for objProp in expInfo_by_objProp.keys():
-            expInfo = expInfo_by_objProp[objProp]
+        for propName in expInfo_by_propName.keys():
+            expInfo = expInfo_by_propName[propName]
             # print(f"    {objProp} expInfo={expInfo}")
 
             parentsObjNameProps = expInfo['parents']

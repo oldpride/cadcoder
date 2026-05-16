@@ -299,7 +299,7 @@ def update_obj_seName(obj, refreshCache=False):
     '''
 
     from cadcoder.objtools import get_obj_prop_jsonDict
-    jsonDict = get_obj_prop_jsonDict(obj, 'pythonFeature')
+    jsonDict = get_obj_prop_jsonDict(obj, 'pythonFeature', silent=True)
 
     # return if jsonDict is empty
     if not jsonDict:

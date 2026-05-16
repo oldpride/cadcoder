@@ -37,16 +37,17 @@ def main():
     includeGrounded=True
     selection = Gui.Selection.getSelection()
     if not selection:
-        expr_by_objProp = get_doc_all_expInfo(doc, useLabel=useLabel,
+        exprInfo_by_propName = get_doc_all_expInfo(doc, useLabel=useLabel,
                                             includeGrounded=includeGrounded,
                                             )
-        print(f"All expressions in document '{doc.Name}', useLabel={useLabel}:\n{pformat(expr_by_objProp)}")
+        print(f"All expressions in document '{doc.Name}', useLabel={useLabel}:\n{pformat(exprInfo_by_propName)}")
     else:
         for obj in sorted(selection, key=lambda o: o.Label):
-            expr_by_objProp = get_obj_all_expInfo(doc, obj, useLabel=useLabel,
+            exprInfo_by_propName = get_obj_all_expInfo(doc, obj, useLabel=useLabel,
                                                 includeGrounded=includeGrounded,
                                                 )
-            print(f"Expressions for object '{obj.Name}', label={obj.Label}, useLabel={useLabel}, exps=\n{pformat(expr_by_objProp)}")
+            print(f"Expressions for object '{obj.Name}', label={obj.Label}, useLabel={useLabel}, exps=\n{pformat(exprInfo_by_propName)}")
+            print(f"---")
 
 if __name__ == "__main__":
     main()

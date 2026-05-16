@@ -70,10 +70,19 @@ def straighten_doc(doc):
 # ]
 
 def diff_docs(doc1, doc2, 
-              objList1=None, objList2=None, diffOnly=False, commOnly=False, skipImport=False,
+              objList1=None, objList2=None, 
+
+              selectedLabels=None, 
+              # if not None, only compare objects with these labels. 
+              # if None, compare all objects.
+
+              diffOnly=False, commOnly=False, skipImport=False,
               objTypeIdPattern=None,  # eg, PartDesign::.*
               propNamePattern=None, # eg, Placement
+              objLabelPattern=None, # eg, callsheet
               ignoreImporter=True,  # ignore importerInstanceName when comparing because it is likely always different.
+              printDetail=False,  # whether to print
+              printExpOnly=False, # whether to only print expression
               debug = 0,
               ):
     '''
@@ -95,6 +104,8 @@ def diff_docs(doc1, doc2,
     # import here to avoid circular import
     from cadcoder.objtools import map_obj_name_label, get_obj_pythonSource, skip_objTypeIdNamePattern
     from cadcoder.proptools import get_prop_info, print_prop_info
+    from cadcoder.expressiontools import get_doc_all_expInfo, get_obj_all_expInfo, get_expInfo_by_objPropKey
+
     objName_by_label1 = map_obj_name_label(doc1)['name_by_label']
     objName_by_label2 = map_obj_name_label(doc2)['name_by_label']
 
@@ -111,22 +122,60 @@ def diff_docs(doc1, doc2,
         objList1 = [obj for obj in objList1 if re.search(objTypeIdPattern, obj.TypeId)]
         objList2 = [obj for obj in objList2 if re.search(objTypeIdPattern, obj.TypeId)]
 
+    if objLabelPattern is not None:
+        objList1 = [obj for obj in objList1 if re.search(objLabelPattern, obj.Label)]
+        objList2 = [obj for obj in objList2 if re.search(objLabelPattern, obj.Label)]
+
     labels1 = [obj.Label for obj in objList1]
     labels2 = [obj.Label for obj in objList2]
+
+    if selectedLabels is not None:
+        labels1 = [label for label in labels1 if label in selectedLabels]
+        labels2 = [label for label in labels2 if label in selectedLabels]
 
     print(f"doc1 Labels: {sorted(labels1)}")
     print(f"doc2 Labels: {sorted(labels2)}")
 
-    diff_props = []
+    # if not debug and printDetail:
+    #     print()
+    #     print("!!! Only showing propNames that differ. Use -d or --debug option to show their values.")
+    #     print()
+
+    '''
+    valuePython may be the same but the value may come from different sources:
+        - hardcoded value, eg, '12.7
+        - hardcoded value, eg, '=0.5 in'
+        - expression referring to other prop, eg, '=<<callsheet>>.b_npt_f_height'
+    we need to mark this as a difference.
+
+    the following example is from out put of import_diff_default_prop.py against npt_fxf.py:
+        > prop <<b_npt_f_callsheet>>.B5 in doc2 'tmpDocNoSave1':
+            valueClassTree={'Quantity'}
+            valuePython=12.7
+            cellContent==0.5 in
+        < prop <<b_npt_f_callsheet>>.B5 in doc1 'npt_fxf':
+            valueClassTree={'Quantity'}
+            valuePython=12.7
+            cellContent==<<callsheet>>.b_npt_f_height
+    
+            > diff expression in doc2 tmpDocNoSave1.b_npt_f_callsheet.B5:
+                rawExpression2=0.5 in
+            < diff expression in doc1 npt_fxf.b_npt_f_callsheet.B5:
+                rawExpression1=<<callsheet>>.b_npt_f_height
+    '''    
+
+    diff_props = {}
+    diff_props_static_only = {} # only catch diff in propValue, disregard its source, eg, hardcoded value vs expression. 
+    diff_exps = {}
 
     combined_labels = sorted(set(labels1) | set(labels2))
     for label in combined_labels:
         if label not in labels1:
-            if not commOnly:
+            if not commOnly and printDetail:
                 print(f"> obj Label='{label}' only in doc2 '{doc2.Label}'")
                 print()
         elif label not in labels2:
-            if not commOnly:
+            if not commOnly and printDetail:
                 print(f"< obj Label='{label}' only in doc1 '{doc1.Label}'")
                 print()
         else: 
@@ -143,12 +192,12 @@ def diff_docs(doc1, doc2,
             importInstanceName2 = pythonSource2.get("importerInstanceName", None)
             if importInstanceName1 is not None or importInstanceName2 is not None:
                 if importInstanceName1 != importInstanceName2 and not ignoreImporter:
-                    if not commOnly:
+                    if not commOnly and printDetail:
                         print(f"> obj Label='{label}' importer={importInstanceName1} in doc2 '{doc2.Label}'")
                         print(f"< obj Label='{label}' importer={importInstanceName2} in doc1 '{doc1.Label}'")
                         print() 
                 else:
-                    if not diffOnly:
+                    if not diffOnly and printDetail:
                         print(f"common obj Label='{label}' in both documents")
                         print() 
 
@@ -156,18 +205,25 @@ def diff_docs(doc1, doc2,
                 continue
  
             if obj1.TypeId != obj2.TypeId:
-                if not commOnly:
+                if not commOnly and printDetail:
                     print(f"> obj Label='{label}' TypeId='{obj2.TypeId}' in doc2 '{doc2.Label}'")
                     print(f"< obj Label='{label}' TypeId='{obj1.TypeId}' in doc1 '{doc1.Label}'")
                     print() 
                 continue
 
-            if not diffOnly:
+            if not diffOnly and printDetail:
                 print(f"common obj Label='{label}' in both documents")
+                print() 
             # compare properties
             propNames1 = set(obj1.PropertiesList)
             propNames2 = set(obj2.PropertiesList)
             combined_props = sorted(propNames1 | propNames2)
+
+            expInfo1_by_propName = get_obj_all_expInfo(doc1, obj1, useLabel=False, includeGrounded=True, refreshCache=False)
+            expInfo2_by_propName = get_obj_all_expInfo(doc2, obj2, useLabel=False, includeGrounded=True, refreshCache=False)   
+            expPropNames1 = set(expInfo1_by_propName.keys())
+            expPropNames2 = set(expInfo2_by_propName.keys())
+            combined_expProps = sorted(expPropNames1 | expPropNames2)
 
             if propNamePattern is not None:
                 combined_props = [propName for propName in combined_props if re.search(propNamePattern, propName)]
@@ -180,67 +236,211 @@ def diff_docs(doc1, doc2,
                     'Shape', 'BoundBox', 'pythonSource', 'pythonFeature'
                     ]:
                     continue
-
-                info1 = get_prop_info(doc1, obj1, propName, objectlist=objList1)
-                info2 = get_prop_info(doc2, obj2, propName, objectlist=objList2)
+                
                 if propName not in propNames1:
-                    if not commOnly:
+                    propInfo2 = get_prop_info(doc2, obj2, propName, objectlist=objList2)
+                    if not commOnly and printDetail and not printExpOnly:
                         print(f"    > prop <<{label}>>.{propName} only in doc2 '{doc2.Label}'")
-                        print_prop_info(info2, indent="    "*2)
+                        print_prop_info(propInfo2, indent="    "*2)
                         print()
-                    diff_props.append({
-                        'obj': obj1,
+                    item = {
+                        'obj': obj2,
                         'propName': propName,
                         'action': 'deleted',  # obj2 is the default
-                        'pythonSource': pythonSource1,
-                        'propInfo': info1,
-                    })
+                        'pythonSource': pythonSource2,
+                        'propInfo': propInfo2,
+                    }
+                    diff_props[f"{label}.{propName}"] = item
+                    diff_props_static_only[f"{label}.{propName}"] = item
+                    if propName in combined_expProps:
+                        expInfo2 = expInfo2_by_propName[propName]
+                        if not commOnly and printDetail and not printExpOnly:
+                            print(f"        > expression in doc2 '{doc2.Label}' objProp='{label}.{propName}':")
+                            print(f"            rawExpression2={expInfo2['rawExpression']}")
+                            print()
+                        diff_exps[f"{label}.{propName}"] = {
+                            'obj': obj2,
+                            'propName': propName,
+                            'action': 'deleted',  # obj2 is the default
+                            'pythonSource': pythonSource2,
+                            'expInfo': expInfo2,
+                        }
                 elif propName not in propNames2:
-                    if not commOnly:
+                    propInfo1 = get_prop_info(doc1, obj1, propName, objectlist=objList1)
+                    if not commOnly and printDetail and not printExpOnly:
                         print(f"    < prop <<{label}>>.{propName} only in doc1 '{doc1.Label}'")
-                        print_prop_info(info1, indent="    "*2)
+                        print_prop_info(propInfo1, indent="    "*2)
                         print()
-                    diff_props.append({
+                    item = {
                         'obj': obj1,
                         'propName': propName,
                         'action': 'added', # obj2 is the default
                         'pythonSource': pythonSource1,
-                        'propInfo': info1,
-                    })
+                        'propInfo': propInfo1,
+                    }
+                    diff_props[f"{label}.{propName}"] = item
+                    diff_props_static_only[f"{label}.{propName}"] = item
+                    if propName in combined_expProps:
+                        expInfo1 = expInfo1_by_propName[propName]
+                        if not commOnly and printDetail and not printExpOnly:
+                            print(f"        > expression in {doc1.Label}.{label}.{propName}:")
+                            print(f"            rawExpression1={expInfo1['rawExpression']}")
+                            print()
+                        diff_exps[f"{label}.{propName}"] = {
+                        'pythonSource': pythonSource1,
+                        'propInfo': propInfo1,
+                    }
+                    if propName in combined_expProps:
+                        expInfo1 = expInfo1_by_propName[propName]
+                        if not commOnly and printDetail and not printExpOnly:
+                            print(f"        > expression in {doc1.Label}.{label}.{propName}:")
+                            print(f"            rawExpression1={expInfo1['rawExpression']}")
+                            print()
+                        diff_exps[f"{label}.{propName}"] = {
+                            'obj': obj1,
+                            'propName': propName,
+                            'action': 'added', # obj2 is the default
+                            'pythonSource': pythonSource1,
+                            'expInfo': expInfo1,
+                        }
                 else:
-                    # if info1['valueClassTree'] == info2['valueClassTree'] and info1['valuePython'] == info2['valuePython']:
-                    if info1['valueClassTree'] == info2['valueClassTree'] and similar_strings(info1['valuePython'], info2['valuePython']):
-                        if not diffOnly:
+                    propInfo1 = get_prop_info(doc1, obj1, propName, objectlist=objList1)
+                    propInfo2 = get_prop_info(doc2, obj2, propName, objectlist=objList2)
+                    # if info1['valueClassTree'] == info2['valueClassTree'] and info1['valuePython'] == info2['valuePython']:             
+                    if (propInfo1['valueClassTree'] == propInfo2['valueClassTree'] 
+                        and similar_strings(propInfo1['valuePython'], propInfo2['valuePython'])
+                        and propInfo1.get('cellContent', None) == propInfo2.get('cellContent', None) # this is to catch expression diff.
+                        ):
+                        if not diffOnly and printDetail and not printExpOnly:
                             print(f"    common prop <<{label}>>.{propName} identical in both documents")
-                            print_prop_info(info1, indent="    "*2)
+                            print(f"        valueClassTree={propInfo1['valueClassTree']}")
+                            print(f"        valuePython={propInfo1['valuePython']}")
+                            if 'cellContent' in propInfo1:
+                                print(f"        cellContent={propInfo1['cellContent']}")
+                            print_prop_info(propInfo1, indent="    "*2)
                             print()
+                        if propName in combined_expProps:
+                            expInfo1 = expInfo1_by_propName[propName]
+                            expInfo2 = expInfo2_by_propName[propName]
+                            rawExpression1 = expInfo1['rawExpression']
+                            rawExpression2 = expInfo2['rawExpression']
+                            if rawExpression1 == rawExpression2:
+                                if not diffOnly and printDetail and not printExpOnly:
+                                    print(f"    common expression for prop {label}.{propName} in both documents")
+                                    print(f"            same rawExpression1={rawExpression1}")
+                                    print(f"            same rawExpression2={rawExpression2}")
+                                    print()
+                            else:
+                                print_prop_info(propInfo1, indent="    "*2)
+                                print()
+                                print_prop_info(propInfo2, indent="    "*2)
+                                print()
+                                print(f"            rawExpression1={rawExpression1}")
+                                print(f"            rawExpression2={rawExpression2}")
+                                print()
+                                raise ValueError(f"expInfo1 and expInfo2 should be the same for common prop {propName} of obj Label='{label}'")
                     else:
-                        if not commOnly:
-                            print(f"    > prop <<{label}>>.{propName} in doc2 '{doc2.Label}':")
-                            if debug:
-                                print_prop_info(info2, indent="    "*2)
-                            print(f"    < prop <<{label}>>.{propName} in doc1 '{doc1.Label}':")
-                            if debug:
-                                print_prop_info(info1, indent="    "*2)
-                            print()
-
-                            if debug:
-                                str1 = reduce_string(info1['valuePython'])
-                                str2 = reduce_string(info2['valuePython'])
-                                # print(f"str1==str2? {str1 == str2}")
-                                # print(f"str1={str1}")
-                                # print(f"str2={str2}")
-                                diff_string(str1, str2)
-                        diff_props.append({
+                        item =  {
                             'obj': obj1,
                             'propName': propName,
                             'action': 'modified',
                             'pythonSource': pythonSource1,
-                            'propInfo': info1,
-                        })
+                            'propInfo': propInfo1,
+                        }
+
+                        if (propInfo1['valueClassTree'] != propInfo2['valueClassTree'] 
+                        or not similar_strings(propInfo1['valuePython'], propInfo2['valuePython'])):
+                            diff_props_static_only[f"{label}.{propName}"] = item
+
+                        if not commOnly and printDetail and not printExpOnly:
+                            print(f"    > prop <<{label}>>.{propName} in doc2 '{doc2.Label}':")
+                            print(f"        valueClassTree={propInfo2['valueClassTree']}")
+                            print(f"        valuePython={propInfo2['valuePython']}")
+                            if 'cellContent' in propInfo2:
+                                print(f"        cellContent={propInfo2['cellContent']}")
+                            if debug:
+                                print_prop_info(propInfo2, indent="    "*2)
+                            print(f"    < prop <<{label}>>.{propName} in doc1 '{doc1.Label}':")
+                            print(f"        valueClassTree={propInfo1['valueClassTree']}")
+                            print(f"        valuePython={propInfo1['valuePython']}")
+                            if 'cellContent' in propInfo1:
+                                print(f"        cellContent={propInfo1['cellContent']}")
+                            if debug:
+                                print_prop_info(propInfo1, indent="    "*2)
+                            print()
+
+                            if debug:
+                                str1 = reduce_string(propInfo1['valuePython'])
+                                str2 = reduce_string(propInfo2['valuePython'])
+                                # print(f"str1==str2? {str1 == str2}")
+                                # print(f"str1={str1}")
+                                # print(f"str2={str2}")
+                                diff_string(str1, str2)
+                        diff_props[f"{label}.{propName}"] = item
+                        if propName in combined_expProps:
+                            if propName not in expPropNames1:
+                                expInfo2 = expInfo1_by_propName[propName]
+                                rawExpression2 = expInfo2['rawExpression']
+                                if not commOnly and printDetail:
+                                    print(f"        > deleted expression in doc2 {doc2.Label}.{label}.{propName}:")
+                                    print(f"            rawExpression2={rawExpression2}")
+                                    print()
+                                diff_exps[f"{label}.{propName}"] = {
+                                    'obj': obj2,
+                                    'propName': propName,
+                                    'action': 'deleted',  # obj2 is the default
+                                    'pythonSource': pythonSource2,
+                                    'expInfo': expInfo2,
+                                }
+                            elif propName not in expPropNames2:
+                                expInfo1 = expInfo1_by_propName[propName]
+                                rawExpression1 = expInfo1['rawExpression']
+                                if not commOnly and printDetail:
+                                    print(f"        < added expression in doc1 {doc1.Label}.{label}.{propName}:")
+                                    print(f"            rawExpression1={rawExpression1}")
+                                    print()
+                                diff_exps[f"{label}.{propName}"] = {
+                                    'obj': obj1,
+                                    'propName': propName,
+                                    'action': 'added', # obj2 is the default
+                                    'pythonSource': pythonSource1,
+                                    'expInfo': expInfo1,
+                                }
+                            else:
+                                expInfo1 = expInfo1_by_propName[propName]
+                                expInfo2 = expInfo2_by_propName[propName]
+                                rawExpression1 = expInfo1['rawExpression']
+                                rawExpression2 = expInfo2['rawExpression']
+                                if rawExpression1 == rawExpression2:
+                                    if not diffOnly:
+                                        if debug:
+                                            print(f"            same rawExpression1={rawExpression1}")
+                                            print(f"            same rawExpression2={rawExpression2}")
+                                            print()
+                                else:
+                                    if not commOnly and printDetail:
+                                        print(f"        > diff expression in doc2 {doc2.Label}.{label}.{propName}:")
+                                        print(f"            rawExpression2={rawExpression2}")
+                                        print(f"        < diff expression in doc1 {doc1.Label}.{label}.{propName}:")
+                                        print(f"            rawExpression1={rawExpression1}")
+                                        print()
+                                    diff_exps[f"{label}.{propName}"] = {
+                                        'obj': obj1,
+                                        'propName': propName,
+                                        'action': 'modified',
+                                        'pythonSource': pythonSource1,
+                                        'expInfo': expInfo1
+                                    }
+
     print("Finished comparing documents: " + doc1.Label + " and " + doc2.Label)
     print()
-    return diff_props
+    return {
+        'diff_props': diff_props,
+        'diff_props_static_only': diff_props_static_only,
+        'diff_exps': diff_exps,
+    }
+    # return diff_props
+
 
 def reduce_string(str1):
     # reduce hex address'at 0x[0-9a-zA-Z]+' with 'at 0x'

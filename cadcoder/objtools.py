@@ -779,7 +779,7 @@ def get_obj_shape(obj, printDetail=False):
         return None
     
 
-def get_obj_prop_jsonDict(obj, propName, printDetail=False):
+def get_obj_prop_jsonDict(obj, propName, printDetail=False, silent=False):
     # if hasattr(obj, propName):
     #     jsonDict =  json.loads(getattr(obj, propName))
     # else:
@@ -789,7 +789,8 @@ def get_obj_prop_jsonDict(obj, propName, printDetail=False):
         jsonDict = json.loads(propValue)
     except Exception as e:
         msg = f"{get_obj_str(obj)} does not have property '{propName}'. Returning empty dict."
-        print(msg)
+        if not silent:
+            print(msg)
         jsonDict = {}
 
     if printDetail:

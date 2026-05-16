@@ -191,21 +191,31 @@ def get_all_upstream_expObjPropKeys(doc, objKey, propName, useLabel, level=0, in
     
     return ret
 
-allExp_by_objKey = {}
+allExp_by_docKey_objKey = {}
 
-def get_obj_all_expInfo(doc, obj, useLabel, includeGrounded=True, debug=0):
+def get_obj_all_expInfo(doc, obj, useLabel, includeGrounded=True, refreshCache=False, debug=0):
     '''
     get all expressions information of an object.
     cache by obj.
     '''
+
+    docKey = f"{doc.Name},{id(doc)}"
+    if docKey not in allExp_by_docKey_objKey:
+        allExp_by_docKey_objKey[docKey] = {}
+
     if useLabel:
         objKey = obj.Label
     else:
         objKey = obj.Name
-    if objKey in allExp_by_objKey:
-        return allExp_by_objKey[objKey]
 
-    info_by_objProp = {}
+    if objKey in allExp_by_docKey_objKey[docKey]:
+        return allExp_by_docKey_objKey[docKey][objKey]
+    
+    if objKey in allExp_by_docKey_objKey[docKey] and refreshCache is False:
+        return allExp_by_docKey_objKey[docKey][objKey]
+    
+    allExp_by_docKey_objKey[docKey][objKey] = {}
+    info_by_prop = {}
 
     # fnd in ExpressionEngine
     try:
@@ -238,7 +248,7 @@ def get_obj_all_expInfo(doc, obj, useLabel, includeGrounded=True, debug=0):
                 parts = propName.split('.')
                 propName = parts[0]  # only keep the first part as propName
                 varType = parts[1]  # Enum, Bind, etc.
-            objPropKey = f"{objKey}.{propName}"
+            # objPropKey = f"{objKey}.{propName}"
 
             info = parse_rawExpression(doc, rawExpression, objKey, propName, useLabel)
             info['varName'] = varName
@@ -249,7 +259,7 @@ def get_obj_all_expInfo(doc, obj, useLabel, includeGrounded=True, debug=0):
             if not (varType is None or varType == ""):
                 # print(f"objKey={objKey}, row={row} -> varName={varName}, varType={varType}")
                 info['varType'] = varType
-            info_by_objProp[objPropKey] = info
+            info_by_prop[propName] = info
 
     '''
     handle 
@@ -295,7 +305,7 @@ def get_obj_all_expInfo(doc, obj, useLabel, includeGrounded=True, debug=0):
             if re.fullmatch(r"[A-Z]\d+", propName):
                 # get cell contents
                 content = obj.getContents(propName)
-                objPropKey = f"{objKey}.{propName}"
+                # objPropKey = f"{objKey}.{propName}"
                 if content[0] == "=":                
                     rawExpression = content[1:]  # skip '='
                     if not includeGrounded:
@@ -305,13 +315,13 @@ def get_obj_all_expInfo(doc, obj, useLabel, includeGrounded=True, debug=0):
                     info['source'] = 'SpreadsheetCell'
                     info['varName'] = propName
                     info['grounded'] = is_exp_grounded(rawExpression)
-                    info_by_objProp[objPropKey] = info
+                    info_by_prop[propName] = info
                 # get aliases
                 alias = obj.getAlias(propName)
                 # print(f"Checking alias for {obj.Name} propName={propName}, alias={alias}")
                 if alias:
                     # alias are all ungrounded
-                    objPropAlias = f"{objKey}.{alias}"
+                    # objPropAlias = f"{objKey}.{alias}"
 
                     # we can use either obj name or label in expression.
                     # label is more readable, but needs wrapping with << and >>.
@@ -321,14 +331,14 @@ def get_obj_all_expInfo(doc, obj, useLabel, includeGrounded=True, debug=0):
                     info['source'] = 'SpreadsheetAlias'
                     info['varName'] = alias
                     info['grounded'] = False # aliases are all ungrounded
-                    info_by_objProp[objPropAlias] = info
+                    info_by_prop[alias] = info
         
-    allExp_by_objKey[objKey] = info_by_objProp
-    return info_by_objProp
+    allExp_by_docKey_objKey[docKey][objKey] = info_by_prop
+    return info_by_prop
 
 allExpInfo_by_docKey = {}
 
-def get_doc_all_expInfo(doc, useLabel, includeGrounded=True, debug=0):
+def get_doc_all_expInfo(doc, useLabel, includeGrounded=True, refreshCache=False, debug=0):
     '''
     'raw' means expressions are as-is in ExpressionEngine or cell contents,
     which may contain both object names and labels.
@@ -373,18 +383,26 @@ def get_doc_all_expInfo(doc, useLabel, includeGrounded=True, debug=0):
     
     docKey = f"{doc.Name},{id(doc)}"
 
-    if docKey in allExpInfo_by_docKey:
+    if docKey in allExpInfo_by_docKey and refreshCache is False:
         return allExpInfo_by_docKey[docKey]
     
     # print stack for debugging
     # traceback.print_stack()
     # print(f"useLabel={useLabel}")
     
+    allExpInfo_by_docKey[docKey] = {}
     info_by_objProp = {}
 
     for obj in sorted(doc.Objects, key=lambda o: o.Label):
-        objExps = get_obj_all_expInfo(doc, obj, useLabel, includeGrounded=includeGrounded, debug=debug)
-        info_by_objProp.update(objExps)    # flatten away objKey level. 
+        expInfo_by_propName = get_obj_all_expInfo(doc, obj, useLabel, includeGrounded=includeGrounded, refreshCache=refreshCache, debug=debug)
+        # info_by_objProp.update(objExps)    # flatten away objKey level. {}
+        if useLabel:
+            objKey = obj.Label
+        else:
+            objKey = obj.Name
+        for propName in expInfo_by_propName.keys():
+            objProp = f"{objKey}.{propName}"
+            info_by_objProp[objProp] = expInfo_by_propName[propName]
                     
     allExpInfo_by_docKey[docKey] = info_by_objProp
     if debug:
@@ -804,7 +822,7 @@ error from below lines:
 
 '''
 
-def sort_objs_exp_dependency(doc, useLabel, objList=None, externalReadyList=None, debug=False, printDetail=False) -> list:
+def sort_objs_exp_dependency(doc, useLabel, objList=None, externalReadyList=None, refreshCache=False, debug=False, printDetail=False) -> list:
     # print(f"useLabel={useLabel} sort_objs_exp_dependency called.")
     if objList is None:
         selections = Gui.Selection.getSelection()
@@ -817,8 +835,15 @@ def sort_objs_exp_dependency(doc, useLabel, objList=None, externalReadyList=None
         if debug:
             print(f"Selected object Name={obj.Name}, TypeId={obj.TypeId}, Label={obj.Label}, useLabel={useLabel}")
 
-        expInfoDict = get_obj_all_expInfo(doc, obj, useLabel=useLabel)
-        expKeyList.extend(expInfoDict.keys())
+        if useLabel:
+            objKey = obj.Label
+        else:
+            objKey = obj.Name
+        expInfo_by_propName = get_obj_all_expInfo(doc, obj, useLabel=useLabel, refreshCache=refreshCache)
+        # expKeyList.extend(expInfoDict.keys())
+        for propName in expInfo_by_propName.keys():
+            objPropKey = f"{objKey}.{propName}"
+            expKeyList.append(objPropKey)
 
     ret = sort_objPropKey_by_exp_dependency(doc, expKeyList, useLabel, externalReadyList=externalReadyList, debug=debug)
     if printDetail:

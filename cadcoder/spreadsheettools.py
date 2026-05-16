@@ -52,7 +52,12 @@ def map_content_by_cellAddr(sheet, refreshCache=False)->dict:
 
     content_by_cellAddr = {}
 
-    contentXml = sheet.getPropertyByName("cells").Content
+    try:
+        contentXml = sheet.getPropertyByName("cells").Content
+    except Exception as e:
+        print(f"Error getting content for sheet '{sheet.Name}': {e}")
+        return content_by_cellAddr
+
     '''
     content example:
     <Cells Count="2" xlink="1">
