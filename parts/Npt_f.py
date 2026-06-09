@@ -126,9 +126,9 @@ class npt_f(baseClass):
         npt_m_instance.callsheet.set(npt_m_instance.callsheet.getCellFromAlias('nominalOD'), f"=<<{self.addPrefix('callsheet')}>>.nominalID")
         npt_m_instance.callsheet.set(npt_m_instance.callsheet.getCellFromAlias('diaExpansion'), f"=<<{self.addPrefix('callsheet')}>>.diaExpansion")
         npt_m_instance.callsheet.set(npt_m_instance.callsheet.getCellFromAlias('male_height'), f"=<<{self.addPrefix('callsheet')}>>.female_height")
-        pad.setExpression("Length", f"<<{self.addPrefix('callsheet')}>>.female_height")
-        callsheet.set(callsheet.getCellFromAlias("femaleOD"), f"=femaleOD_wall * 2 + <<{self.addPrefix('npt_m_spec')}>>.RealOD + diaExpansion")
-        sketch.setExpression("Constraints[1]", f"<<{self.addPrefix('callsheet')}>>.femaleOD")
+        pad.setExpression('Length', f"<<{self.addPrefix('callsheet')}>>.female_height")
+        callsheet.set(callsheet.getCellFromAlias('femaleOD'), f"=femaleOD_wall * 2 + <<{self.addPrefix('npt_m_spec')}>>.RealOD + diaExpansion")
+        sketch.setExpression('Constraints[1]', f"<<{self.addPrefix('callsheet')}>>.femaleOD")
         
         # add trigger objects' expressions
         

@@ -37,7 +37,7 @@ from cadcoder.expressiontools import get_expInfo_by_objPropKey, sort_objs_exp_de
 from cadcoder.logtools import prefix_stack
 from cadcoder.matchtools import match_key_startswith
 from cadcoder.objtools import expand_objects, get_obj_by_objKey, sort_objs_by_downstream, get_obj_str
-from cadcoder.proptools import compare_obj_prop_with_default, get_prop_info, normalize_label, propIsReadonly, get_obj_varname, get_prop_value_str_repr
+from cadcoder.proptools import compare_obj_prop_with_default, get_prop_info, normalize_label, propIsReadonly, get_obj_varname, get_prop_static_value_str_repr
 from cadcoder.sketchtools import sketch2python
 from cadcoder.spreadsheettools import is_cell_in_sheet
 from cadcoder.subelementtools import get_posName_by_seName
@@ -782,7 +782,7 @@ def export_doc(doc, useLabel: bool, topClassName: str):
 
     callsheet_param_values_str = ""
     for (obj, vname, propName, info, call_param_name) in sorted_callsheet_params:
-        param_value = get_prop_value_str_repr(info, targetFuncParam=True, preferInchUnit=True)
+        param_value = get_prop_static_value_str_repr(info, targetFuncParam=True, preferInchUnit=True)
         callsheet_param_values_str += f"{call_param_name}={param_value}, "
     
     add_body_line('')
@@ -820,7 +820,7 @@ def export_doc(doc, useLabel: bool, topClassName: str):
                 callParams_str = ""
                 for importCallInfo in sorted(importCallInfo_by_instanceName[instanceName], key=lambda x: x['call_param_key']):
                     call_param_key = importCallInfo['call_param_key']
-                    param_value = get_prop_value_str_repr(importCallInfo['propInfo'], targetFuncParam=True, preferInchUnit=True)
+                    param_value = get_prop_static_value_str_repr(importCallInfo['propInfo'], targetFuncParam=True, preferInchUnit=True)
                     callParams_str += f"{call_param_key}={param_value}, "
                 importCode_by_instanceName[instanceName] = importCode_by_instanceName[instanceName].replace(f'params_placeholder_{instanceName}', callParams_str)
             # print(f"importCode_by_instanceName[{instanceName}] = {importCode_by_instanceName[instanceName]}")
@@ -1137,7 +1137,7 @@ def add_static_prop(doc, obj, objVarName, useLabel, objectList, topCallsheetObjs
                 if obj2.TypeId == 'Spreadsheet::Sheet' and is_cell_in_sheet(propName, obj2):
                     # this property is a cell in the spreadsheet
                     valueClass = info1['valueClass']
-                    param_value = get_prop_value_str_repr(
+                    param_value = get_prop_static_value_str_repr(
                         info1,
                         targetFuncParam=False,
                         preferInchUnit=True,

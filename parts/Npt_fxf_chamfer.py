@@ -110,8 +110,8 @@ class npt_fxf_chamfer(baseClass):
         # add delayed static property values
         
         # add expressions to object properties based on expression dependencies
-        chamfer_bottom.setExpression("Size", f"<<{self.addPrefix('callsheet')}>>.npt_fxf_chamfer_bottom_size")
-        chamfer_top.setExpression("Size", f"<<{self.addPrefix('callsheet')}>>.npt_fxf_chamfer_top_size")
+        chamfer_bottom.setExpression('Size', f"<<{self.addPrefix('callsheet')}>>.npt_fxf_chamfer_bottom_size")
+        chamfer_top.setExpression('Size', f"<<{self.addPrefix('callsheet')}>>.npt_fxf_chamfer_top_size")
         npt_fxf_instance.callsheet.set(npt_fxf_instance.callsheet.getCellFromAlias('s_npt_f_nominalID'), f"=<<{self.addPrefix('callsheet')}>>.s_npt_f_nominalID")
         npt_fxf_instance.callsheet.set(npt_fxf_instance.callsheet.getCellFromAlias('b_npt_f_nominalID'), f"=<<{self.addPrefix('callsheet')}>>.b_npt_f_nominalID")
         npt_fxf_instance.callsheet.set(npt_fxf_instance.callsheet.getCellFromAlias('s_npt_f_wall'), f"=<<{self.addPrefix('callsheet')}>>.s_npt_f_wall")

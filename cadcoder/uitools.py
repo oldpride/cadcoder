@@ -85,6 +85,7 @@ class TextDialog:
         print(f"ui_file={self.ui_file}")
         self.form = Gui.PySideUic.loadUi(self.ui_file)
         self.form.pushButtonClose.pressed.connect(self.close_callback)
+        self.form.setWindowFlags(self.form.windowFlags() | QtCore.Qt.WindowMinimizeButtonHint)
         self.form.show()
 
         '''

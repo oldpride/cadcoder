@@ -48,8 +48,11 @@ def map_content_by_cellAddr(sheet, refreshCache=False)->dict:
     if sheetName in content_by_docKey__sheetName_cellAddr[docKey] and not refreshCache:
         return content_by_docKey__sheetName_cellAddr[docKey][sheetName]
     
-    content_by_docKey__sheetName_cellAddr[docKey][sheetName] = {}
+    if sheet.TypeId != 'Spreadsheet::Sheet':
+        content_by_docKey__sheetName_cellAddr[docKey][sheetName] = None
+        return None
 
+    content_by_docKey__sheetName_cellAddr[docKey][sheetName] = {}
     content_by_cellAddr = {}
 
     try:
@@ -79,11 +82,17 @@ def map_content_by_cellAddr(sheet, refreshCache=False)->dict:
 
 def get_content_by_cellAddr(sheet, cellAddr, refreshCache=False):
     content_by_cellAddr = map_content_by_cellAddr(sheet, refreshCache=refreshCache)
+    if content_by_cellAddr is None:
+        return None
     return content_by_cellAddr.get(cellAddr, None)
 
 def get_cell_list(sheet, refreshCache=False)->list:
     sheetName = sheet.Name
     content_by_sheetName_cellAddr = map_content_by_cellAddr(sheet, refreshCache=refreshCache)
+    
+    if content_by_sheetName_cellAddr is None:
+        return None
+    
     return list(content_by_sheetName_cellAddr.keys())
 
 def is_cell_in_sheet(cellAddr:str, sheet, refreshCache=False) -> bool:
@@ -93,6 +102,10 @@ def is_cell_in_sheet(cellAddr:str, sheet, refreshCache=False) -> bool:
     'sel.getContents(cell) is not None' always return True, thus we implement our own version.
     '''
     content_by_cellAddr = map_content_by_cellAddr(sheet, refreshCache=refreshCache)
+    
+    if content_by_cellAddr is None:
+        return None
+    
     return cellAddr in content_by_cellAddr
 
 def col_index_to_letter(col_idx:int) -> str:
