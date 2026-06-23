@@ -9,7 +9,7 @@ from cadcoder.objtools import update_obj_prop_jsonDict
 from cadcoder.subelementtools import update_objs_seName, update_doc_seName, get_seName_by_posName
 
 class straight_m(baseClass):
-    def __init__(self, instanceName, doc, objPrefix="", useLabel=True, importer=None, diaExpansion='0 mm', height='1 in', pitch='1 mm', radius='0.2 in',  ):
+    def __init__(self, instanceName, doc, objPrefix="", useLabel=True, importer=None, diaExpansion='0 in', height='1 in', pitch='0.0357 in', radius='0.2 in',  ):
         self.diaExpansion = diaExpansion
         self.height = height
         self.pitch = pitch
@@ -47,40 +47,67 @@ class straight_m(baseClass):
         self.post_new_obj(body_YZ_Plane)
         body.recompute()  # recompute after adding object
         
+        common_cutter = doc.addObject('PartDesign::Body', self.addPrefix('common_cutter') )
+        common_cutter.Label = self.addPrefix('common_cutter')
+        self.common_cutter = common_cutter
+        self.post_new_obj(common_cutter)
+        common_cutter_Origin = get_LCS_by_prefix(doc, common_cutter, 'Origin')
+        common_cutter_X_Axis = get_LCS_by_prefix(doc, common_cutter, 'X_Axis')
+        common_cutter_Y_Axis = get_LCS_by_prefix(doc, common_cutter, 'Y_Axis')
+        common_cutter_Z_Axis = get_LCS_by_prefix(doc, common_cutter, 'Z_Axis')
+        common_cutter_XY_Plane = get_LCS_by_prefix(doc, common_cutter, 'XY_Plane')
+        common_cutter_XZ_Plane = get_LCS_by_prefix(doc, common_cutter, 'XZ_Plane')
+        common_cutter_YZ_Plane = get_LCS_by_prefix(doc, common_cutter, 'YZ_Plane')
+        self.common_cutter_Origin = common_cutter_Origin
+        self.common_cutter_X_Axis = common_cutter_X_Axis
+        self.common_cutter_Y_Axis = common_cutter_Y_Axis
+        self.common_cutter_Z_Axis = common_cutter_Z_Axis
+        self.common_cutter_XY_Plane = common_cutter_XY_Plane
+        self.common_cutter_XZ_Plane = common_cutter_XZ_Plane
+        self.common_cutter_YZ_Plane = common_cutter_YZ_Plane
+        self.post_new_obj(common_cutter_Origin)
+        self.post_new_obj(common_cutter_X_Axis)
+        self.post_new_obj(common_cutter_Y_Axis)
+        self.post_new_obj(common_cutter_Z_Axis)
+        self.post_new_obj(common_cutter_XY_Plane)
+        self.post_new_obj(common_cutter_XZ_Plane)
+        self.post_new_obj(common_cutter_YZ_Plane)
+        common_cutter.recompute()  # recompute after adding object
+        
         callsheet = doc.addObject('Spreadsheet::Sheet', self.addPrefix('callsheet') )
         callsheet.Label = self.addPrefix('callsheet')
         self.callsheet = callsheet
         self.post_new_obj(callsheet)
         callsheet.set('A1', 'variableName')
         callsheet.set('A2', 'radius')
-        callsheet.set('A3', 'radius_expanded')
-        callsheet.set('A4', 'height')
+        callsheet.set('A3', 'height')
+        callsheet.set('A4', 'pad_height')
         callsheet.set('A5', 'pitch')
-        callsheet.set('A6', 'thread_height')
+        callsheet.set('A6', 'helix_height')
         callsheet.set('A7', 'cutter_side')
         callsheet.set('A8', 'cutter_radius')
         callsheet.set('A9', 'diaExpansion')
         callsheet.set('B1', 'value')
         callsheet.set('B2', '=0.2 in')
         callsheet.setAlias('B2', 'radius')
-        callsheet.set('B3', '=0.2 in')
-        callsheet.setAlias('B3', 'radius_expanded')
-        callsheet.set('B4', '=1 in')
-        callsheet.setAlias('B4', 'height')
-        callsheet.set('B5', '=1 mm')
+        callsheet.set('B3', '=1 in')
+        callsheet.setAlias('B3', 'height')
+        callsheet.set('B4', '=1.1071 in')
+        callsheet.setAlias('B4', 'pad_height')
+        callsheet.set('B5', '=0.0357 in')
         callsheet.setAlias('B5', 'pitch')
-        callsheet.set('B6', '=1.0999999999999999 in')
-        callsheet.setAlias('B6', 'thread_height')
-        callsheet.set('B7', '=0.03933070866141732 in')
+        callsheet.set('B6', '=1.0714 in')
+        callsheet.setAlias('B6', 'helix_height')
+        callsheet.set('B7', '=0.034986 in')
         callsheet.setAlias('B7', 'cutter_side')
         callsheet.set('B8', '=0.202 in')
         callsheet.setAlias('B8', 'cutter_radius')
-        callsheet.set('B9', '=0 mm')
+        callsheet.set('B9', '=0 in')
         callsheet.setAlias('B9', 'diaExpansion')
         callsheet.set('C1', 'isCallParam')
         callsheet.set('C2', 'Y')
-        callsheet.set('C3', 'N')
-        callsheet.set('C4', 'Y')
+        callsheet.set('C3', 'Y')
+        callsheet.set('C4', 'N')
         callsheet.set('C5', 'Y')
         callsheet.set('C6', 'N')
         callsheet.set('C7', 'N')
@@ -90,34 +117,50 @@ class straight_m(baseClass):
         callsheet.set('D9', 'b_ 0.03 in for 3D print')
         callsheet.recompute()  # recompute after adding object
         
-        straight_m_circle_sketch = doc.addObject('Sketcher::SketchObject', self.addPrefix('straight_m_circle_sketch') )
-        straight_m_circle_sketch.Label = self.addPrefix('straight_m_circle_sketch')
-        self.straight_m_circle_sketch = straight_m_circle_sketch
-        self.post_new_obj(straight_m_circle_sketch)
-        self.container_append_object(body, straight_m_circle_sketch)
-        geo0 = straight_m_circle_sketch.addGeometry(Part.Circle(Vector(0.0000, 0.0000, 0.0000), Vector (0.0, 0.0, 1.0), 5.0800))
-        straight_m_circle_sketch.addConstraint(Sketcher.Constraint('Coincident', geo0, 3, -1, 1))
-        straight_m_circle_sketch.addConstraint(Sketcher.Constraint('Radius', geo0, 5.0800))
-        straight_m_circle_sketch.AttacherEngine = 'Engine Plane'
-        straight_m_circle_sketch.AttachmentSupport = (body_XY_Plane, (''))
+        common_cutter_sketch = doc.addObject('Sketcher::SketchObject', self.addPrefix('common_cutter_sketch') )
+        common_cutter_sketch.Label = self.addPrefix('common_cutter_sketch')
+        self.common_cutter_sketch = common_cutter_sketch
+        self.post_new_obj(common_cutter_sketch)
+        self.container_append_object(common_cutter, common_cutter_sketch)
+        geo0 = common_cutter_sketch.addGeometry(Part.Circle(Vector(0.0000, 0.0000, 0.0000), Vector (0.0, 0.0, 1.0), 5.0800))
+        common_cutter_sketch.addConstraint(Sketcher.Constraint('Coincident', geo0, 3, -1, 1))
+        common_cutter_sketch.addConstraint(Sketcher.Constraint('Radius', geo0, 5.0800))
+        common_cutter_sketch.AttacherEngine = 'Engine Plane'
+        common_cutter_sketch.AttachmentSupport = (common_cutter_XY_Plane, (''))
+        common_cutter_XY_Plane.Visibility = False  # hide base object
+        common_cutter_sketch.MapMode = 'FlatFace'
+        common_cutter_sketch.Visibility = False
+        common_cutter_sketch.ViewObject.Visibility = False
+        common_cutter_sketch.recompute()  # recompute after adding object
+        
+        sketch = doc.addObject('Sketcher::SketchObject', self.addPrefix('sketch') )
+        sketch.Label = self.addPrefix('sketch')
+        self.sketch = sketch
+        self.post_new_obj(sketch)
+        self.container_append_object(body, sketch)
+        geo0 = sketch.addGeometry(Part.Circle(Vector(0.0000, 0.0000, 0.0000), Vector (0.0, 0.0, 1.0), 5.0800))
+        sketch.addConstraint(Sketcher.Constraint('Coincident', geo0, 3, -1, 1))
+        sketch.addConstraint(Sketcher.Constraint('Radius', geo0, 5.0800))
+        sketch.AttacherEngine = 'Engine Plane'
+        sketch.AttachmentSupport = (body_XY_Plane, (''))
         body_XY_Plane.Visibility = False  # hide base object
-        straight_m_circle_sketch.MapMode = 'FlatFace'
-        straight_m_circle_sketch.Visibility = False
-        straight_m_circle_sketch.ViewObject.Visibility = False
-        straight_m_circle_sketch.recompute()  # recompute after adding object
+        sketch.MapMode = 'FlatFace'
+        sketch.Visibility = False
+        sketch.ViewObject.Visibility = False
+        sketch.recompute()  # recompute after adding object
         
         straight_m_cutter_sketch = doc.addObject('Sketcher::SketchObject', self.addPrefix('straight_m_cutter_sketch') )
         straight_m_cutter_sketch.Label = self.addPrefix('straight_m_cutter_sketch')
         self.straight_m_cutter_sketch = straight_m_cutter_sketch
         self.post_new_obj(straight_m_cutter_sketch)
         self.container_append_object(body, straight_m_cutter_sketch)
-        geo0 = straight_m_cutter_sketch.addGeometry(Part.LineSegment(Vector (4.265643068020128, -0.4994957627799554, 0.0), Vector (5.1308, 0.0, 0.0)))
-        geo1 = straight_m_cutter_sketch.addGeometry(Part.LineSegment(Vector (5.1308, 0.0, 0.0), Vector (5.1308, -0.999, 0.0)))
-        geo2 = straight_m_cutter_sketch.addGeometry(Part.LineSegment(Vector (5.1308, -0.999, 0.0), Vector (4.265643068020128, -0.4994957627799554, 0.0)))
+        geo0 = straight_m_cutter_sketch.addGeometry(Part.LineSegment(Vector (4.361213550816896, -0.44431843086378514, 0.0), Vector (5.1308, 0.0, 0.0)))
+        geo1 = straight_m_cutter_sketch.addGeometry(Part.LineSegment(Vector (5.1308, 0.0, 0.0), Vector (5.1308, -0.8886444, 0.0)))
+        geo2 = straight_m_cutter_sketch.addGeometry(Part.LineSegment(Vector (5.1308, -0.8886444, 0.0), Vector (4.361213550816896, -0.4443184308637851, 0.0)))
         straight_m_cutter_sketch.addConstraint(Sketcher.Constraint('Coincident', geo1, 1, geo0, 2))
         straight_m_cutter_sketch.addConstraint(Sketcher.Constraint('Vertical', geo1))
         straight_m_cutter_sketch.addConstraint(Sketcher.Constraint('Coincident', geo2, 1, geo1, 2))
-        straight_m_cutter_sketch.addConstraint(Sketcher.Constraint('DistanceY', geo1, 2, geo1, 1, 0.9990))
+        straight_m_cutter_sketch.addConstraint(Sketcher.Constraint('DistanceY', geo1, 2, geo1, 1, 0.8886))
         straight_m_cutter_sketch.addConstraint(Sketcher.Constraint('DistanceX', -1, 1, geo0, 2, 5.1308))
         straight_m_cutter_sketch.addConstraint(Sketcher.Constraint('Coincident', geo0, 1, geo2, 2))
         straight_m_cutter_sketch.addConstraint(Sketcher.Constraint('PointOnObject', geo0, 2, -1))
@@ -131,68 +174,70 @@ class straight_m(baseClass):
         straight_m_cutter_sketch.ViewObject.Visibility = False
         straight_m_cutter_sketch.recompute()  # recompute after adding object
         
-        straight_m_helix = doc.addObject('Part::Helix', self.addPrefix('straight_m_helix') )
-        straight_m_helix.Label = self.addPrefix('straight_m_helix')
-        self.straight_m_helix = straight_m_helix
-        self.post_new_obj(straight_m_helix)
-        straight_m_helix.Height = 27.939999999999998
-        straight_m_helix.Radius = 5.08
-        straight_m_helix.SegmentLength = 1.0
-        straight_m_helix.Style = 'New style'
-        straight_m_helix.Visibility = False
-        straight_m_helix.ViewObject.Visibility = False
-        straight_m_helix.recompute()  # recompute after adding object
-        
-        helix_binder = doc.addObject('PartDesign::SubShapeBinder', self.addPrefix('helix_binder') )
-        helix_binder.Label = self.addPrefix('helix_binder')
-        self.helix_binder = helix_binder
-        self.post_new_obj(helix_binder)
-        self.container_append_object(body, helix_binder)
-        helix_binder.addProperty("App::PropertyMatrix", "Cache_straight_m_helix")
-        helix_binder.Cache_straight_m_helix = App.Matrix(1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0)
-        helix_binder.Context = (body, 'Binder.')
-        helix_binder.Support = [(straight_m_helix, (''))]
-        helix_binder.Visibility = False
-        helix_binder.ViewObject.Visibility = False
-        helix_binder.recompute()  # recompute after adding object
+        common_cutter_pad = doc.addObject('PartDesign::Pad', self.addPrefix('common_cutter_pad') )
+        common_cutter_pad.Label = self.addPrefix('common_cutter_pad')
+        self.common_cutter_pad = common_cutter_pad
+        self.post_new_obj(common_cutter_pad)
+        self.container_append_object(common_cutter, common_cutter_pad)
+        common_cutter_pad.Length = 25.4
+        common_cutter_pad.Profile = (common_cutter_sketch, [''])
+        common_cutter_pad.ReferenceAxis = (common_cutter_sketch, ['N_Axis'])
+        common_cutter_pad.recompute()  # recompute after adding object
         
         pad = doc.addObject('PartDesign::Pad', self.addPrefix('pad') )
         pad.Label = self.addPrefix('pad')
         self.pad = pad
         self.post_new_obj(pad)
         self.container_append_object(body, pad)
-        pad.Length = 25.4
-        pad.Profile = (straight_m_circle_sketch, [''])
-        pad.ReferenceAxis = (straight_m_circle_sketch, ['N_Axis'])
+        pad.Length = 28.12034
+        pad.Profile = (sketch, [''])
+        pad.ReferenceAxis = (sketch, ['N_Axis'])
         pad.Visibility = False
         pad.ViewObject.Visibility = False
         pad.recompute()  # recompute after adding object
         
-        subtractivepipe = doc.addObject('PartDesign::SubtractivePipe', self.addPrefix('subtractivepipe') )
-        subtractivepipe.Label = self.addPrefix('subtractivepipe')
-        self.subtractivepipe = subtractivepipe
-        self.post_new_obj(subtractivepipe)
-        self.container_append_object(body, subtractivepipe)
-        subtractivepipe.BaseFeature = pad
-        subtractivepipe.Mode = 'Frenet'
-        subtractivepipe.Profile = (straight_m_cutter_sketch, [])
-        subtractivepipe.Spine = (helix_binder, [])
-        subtractivepipe.recompute()  # recompute after adding object
+        SubtractiveHelix = doc.addObject('PartDesign::SubtractiveHelix', self.addPrefix('SubtractiveHelix') )
+        SubtractiveHelix.Label = self.addPrefix('SubtractiveHelix')
+        self.SubtractiveHelix = SubtractiveHelix
+        self.post_new_obj(SubtractiveHelix)
+        self.container_append_object(body, SubtractiveHelix)
+        SubtractiveHelix.BaseFeature = pad
+        SubtractiveHelix.HasBeenEdited = True
+        SubtractiveHelix.Height = 27.213559999999998
+        SubtractiveHelix.Pitch = 0.90678
+        SubtractiveHelix.Profile = (straight_m_cutter_sketch, [''])
+        SubtractiveHelix.ReferenceAxis = (straight_m_cutter_sketch, ['V_Axis'])
+        SubtractiveHelix.Visibility = False
+        SubtractiveHelix.ViewObject.Visibility = False
+        SubtractiveHelix.recompute()  # recompute after adding object
+        
+        boolean_common = doc.addObject('PartDesign::Boolean', self.addPrefix('boolean_common') )
+        boolean_common.Label = self.addPrefix('boolean_common')
+        self.boolean_common = boolean_common
+        self.post_new_obj(boolean_common)
+        self.container_append_object(body, boolean_common)
+        boolean_common.BaseFeature = SubtractiveHelix
+        boolean_common.Group = [common_cutter]
+        boolean_common.Type = 'Common'
+        boolean_common.UsePlacement = True
+        doc.recompute() # recompute whole document for PartDesign::Boolean
         
         # add delayed static property values
         
         # add expressions to object properties based on expression dependencies
-        pad.setExpression("Length", f"<<{self.addPrefix('callsheet')}>>.height")
-        straight_m_helix.setExpression("Pitch", f"<<{self.addPrefix('callsheet')}>>.pitch")
-        callsheet.set(callsheet.getCellFromAlias("radius_expanded"), f"=radius + diaExpansion / 2")
-        callsheet.set(callsheet.getCellFromAlias("thread_height"), f"=height + 0.1 in")
-        callsheet.set(callsheet.getCellFromAlias("cutter_side"), f"=pitch * 0.999")
-        straight_m_circle_sketch.setExpression("Constraints[1]", f"<<{self.addPrefix('callsheet')}>>.radius_expanded")
-        straight_m_cutter_sketch.setExpression("Constraints[3]", f"<<{self.addPrefix('callsheet')}>>.cutter_side")
-        straight_m_helix.setExpression("Height", f"<<{self.addPrefix('callsheet')}>>.thread_height")
-        straight_m_helix.setExpression("Radius", f"<<{self.addPrefix('callsheet')}>>.radius_expanded")
-        callsheet.set(callsheet.getCellFromAlias("cutter_radius"), f"=radius_expanded * 1.01")
-        straight_m_cutter_sketch.setExpression("Constraints[4]", f"<<{self.addPrefix('callsheet')}>>.cutter_radius")
+        SubtractiveHelix.setExpression('Angle', f"0")
+        common_cutter_pad.setExpression('Length', f"<<{self.addPrefix('callsheet')}>>.height")
+        common_cutter_sketch.setExpression('Constraints[1]', f"<<{self.addPrefix('callsheet')}>>.radius")
+        sketch.setExpression('Constraints[1]', f"<<{self.addPrefix('callsheet')}>>.radius")
+        SubtractiveHelix.setExpression('Pitch', f"<<{self.addPrefix('callsheet')}>>.pitch")
+        callsheet.set(callsheet.getCellFromAlias('pad_height'), f"=height + 3 * pitch")
+        callsheet.set(callsheet.getCellFromAlias('helix_height'), f"=height + 2 * pitch")
+        callsheet.set(callsheet.getCellFromAlias('cutter_side'), f"=pitch * 0.98")
+        callsheet.set(callsheet.getCellFromAlias('cutter_radius'), f"=radius * 1.01")
+        pad.setExpression('Length', f"<<{self.addPrefix('callsheet')}>>.pad_height")
+        straight_m_cutter_sketch.setExpression('Constraints[3]', f"<<{self.addPrefix('callsheet')}>>.cutter_side")
+        straight_m_cutter_sketch.setExpression('Constraints[4]', f"<<{self.addPrefix('callsheet')}>>.cutter_radius")
+        SubtractiveHelix.setExpression('Height', f"<<{self.addPrefix('callsheet')}>>.helix_height")
         
         # add trigger objects' expressions
         
@@ -218,7 +263,7 @@ def main():
     doc = recreate_tmp_doc()
     
     # create instance of straight_m
-    myInstance = straight_m("myInstance", doc, objPrefix="", useLabel=True, importer=None, diaExpansion='0 mm', height='1 in', pitch='1 mm', radius='0.2 in', )
+    myInstance = straight_m("myInstance", doc, objPrefix="", useLabel=True, importer=None, diaExpansion='0 in', height='1 in', pitch='0.0357 in', radius='0.2 in', )
     
     # main_part2
     from pprint import pformat

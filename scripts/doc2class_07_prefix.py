@@ -30,7 +30,7 @@ from FreeCAD import Vector, Placement
 import json
 from PySide2 import QtWidgets, QtCore
 from pprint import pformat
-from cadcoder.callsheettools import is_callParam
+from cadcoder.callsheettools import is_varName_callParam
 from cadcoder.importtools import map_importInfo,  compare_import_with_default
 from cadcoder.containertools import get_LCS_map, get_LCS_prefixes, get_container_by_objName
 from cadcoder.expressiontools import get_expInfo_by_objPropKey, sort_objs_exp_dependency
@@ -1033,7 +1033,7 @@ def add_static_prop(doc, obj, objVarName, useLabel, objectList, topCallsheetObjs
                             # if alias in ['ImportObj', 'ExportObj', 'Class', 'ImportParam', 'ImportInstance']:
                             #     continue
                             # skip alias if it is not a callParam
-                            if not is_callParam(obj2, alias, checkParam=True):
+                            if not is_varName_callParam(obj2, alias, checkParam=True):
                                 continue
 
                             # print(f"checking call parameter for cell {propName} alias={alias} in callsheet spreadsheet {obj2.Label}")

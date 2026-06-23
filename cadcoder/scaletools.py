@@ -22,7 +22,7 @@ def scale_clone(obj, key_pattern, cloneLabel=None, export_stl=False):
     elif m := re.match(f"(\d+.)?\d+,(\d+.)?\d+,(\d+.)?\d+$", key_pattern):
         # if key is in format of "1.2,1.2,1.3", parse it to get xScale, yScale, zScale
         xScale, yScale, zScale = map(float, key_pattern.split(","))
-        default_label = f"{obj.Label}_scaled_{key_pattern}"
+        default_label = f"skippable_{obj.Label}_scaled_{key_pattern}"
     else:
         match_keys = [k for k in scale_by_key.keys() if re.search(key_pattern, k, re.IGNORECASE)]
         if not match_keys:
@@ -31,7 +31,7 @@ def scale_clone(obj, key_pattern, cloneLabel=None, export_stl=False):
             raise ValueError(f"key={key_pattern} matches multiple keys in scale_by_key: {match_keys}")
         else:
             xScale, yScale, zScale = scale_by_key[match_keys[0]]
-            default_label = f"{obj.Label}_scaled_{match_keys[0]}"
+            default_label = f"skippable_{obj.Label}_scaled_{match_keys[0]}"
     
     doc = obj.Document
     if cloneLabel is None:

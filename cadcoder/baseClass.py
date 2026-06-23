@@ -61,10 +61,17 @@ class baseClass:
         #     self.importerInstanceName = ""
         # if self.importer is not None and isinstance(self.importer, dict):
         if self.importer is not None:
-            self.importerClassName = self.importer.className
-            self.importerInstanceId = self.importer.instanceId 
-            self.importerInstanceChain = self.importer.instanceChain
-            self.importerInstanceName = self.importer.instanceName
+            if isinstance(self.importer, dict):
+                # class_import.py will feed importer as dict which is from pythonSource's json.
+                self.importerClassName = self.importer['className']
+                self.importerInstanceId = self.importer['instanceId']
+                self.importerInstanceChain = self.importer['instanceChain']
+                self.importerInstanceName = self.importer['instanceName']
+            else:
+                self.importerClassName = self.importer.className
+                self.importerInstanceId = self.importer.instanceId 
+                self.importerInstanceChain = self.importer.instanceChain
+                self.importerInstanceName = self.importer.instanceName
         else:
             self.importerClassName = None
             self.importerInstanceId = None

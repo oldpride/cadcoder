@@ -118,21 +118,35 @@ def get_rowNum_by_varName(sheet, varName, refreshCache=False, checkParam=False)-
     return None
 
 
-callParams_by_sheetName = {}
 def get_callParams(sheet, refreshCache=False, checkParam=False):
-    sheetName = sheet.Name
-    if sheetName in callParams_by_sheetName:
-        return callParams_by_sheetName[sheetName]
     rowDict_by_varName = map_rowDict_by_varName(sheet, refreshCache=refreshCache, checkParam=checkParam)
     callParams = []
     for varName in sorted(rowDict_by_varName.keys()):
         rowDict = rowDict_by_varName[varName]
         if rowDict.get("isCallParam") == "Y":
             callParams.append(varName)
-    callParams_by_sheetName[sheetName] = callParams
     return callParams
 
-def is_callParam(sheet, varName, refreshCache=False, checkParam=False):
+def get_callParamValues(sheet, refreshCache=False, checkParam=False):
+    rowDict_by_varName = map_rowDict_by_varName(sheet, refreshCache=refreshCache, checkParam=checkParam)
+    callParamValues = {}
+    for varName in sorted(rowDict_by_varName.keys()):
+        rowDict = rowDict_by_varName[varName]
+        if rowDict.get("isCallParam") == "Y":
+            callParamValues[varName] = rowDict.get("value")
+    return callParamValues
+
+def is_varName_callParam(sheet, varName, refreshCache=False, checkParam=False):
+    rowDict = get_rowDict_by_varName(sheet, varName, refreshCache=refreshCache, checkParam=checkParam)
+    if rowDict:
+        return rowDict.get("isCallParam") == "Y"
+    return False
+
+def is_cellAddr_callParam(sheet, cellAddr, refreshCache=False, checkParam=False):
+    if not re.match(r'^B\d+$', cellAddr):
+        # only B column has alias
+        return False
+    varName = sheet.getAlias(cellAddr)
     rowDict = get_rowDict_by_varName(sheet, varName, refreshCache=refreshCache, checkParam=checkParam)
     if rowDict:
         return rowDict.get("isCallParam") == "Y"

@@ -328,20 +328,71 @@ def propValue2python(propValue, objectlist=None)->dict:
     return {'normal': normal, 'prefixed': normal}
 
 # Cf. https://github.com/FreeCAD/FreeCAD/blob/278ce803907ef72548d7ac761613038ac435c481/src/App/Property.h#L60
-statuslist = [
+'''
+    enum Status
+    {
+        Touched = 0,             // touched property
+        Immutable = 1,           // can't modify property
+        ReadOnly = 2,            // for property editor
+        Hidden = 3,              // for property editor
+        Transient = 4,           // for property container save
+        MaterialEdit = 5,        // to turn ON PropertyMaterial edit
+        NoMaterialListEdit = 6,  // to turn OFF PropertyMaterialList edit
+        Output = 7,              // same effect as Prop_Output
+        LockDynamic = 8,         // prevent being removed from dynamic property
+        NoModify = 9,            // prevent causing Gui::Document::setModified()
+        PartialTrigger = 10,     // allow change in partial doc
+        NoRecompute = 11,        // don't touch owner for recompute on property change
+        Single = 12,             // for save/load of floating point numbers
+        Ordered = 13,            // for PropertyLists whether the order of the elements is
+                                 // relevant for the container using it
+        EvalOnRestore = 14,      // In case of expression binding, evaluate the
+                                 // expression on restore and touch the object on value change.
+        Busy = 15,               // internal use to avoid recursive signaling
+        CopyOnChange =
+            16,  // for Link to copy the linked object on change of the property with this flag
+        UserEdit = 17,  // cause property editor to create button for user defined editing
+
+        // The following bits are corresponding to PropertyType set when the
+        // property added. These types are meant to be static, and cannot be
+        // changed in runtime. It is mirrored here to save the linear search
+        // required in PropertyContainer::getPropertyType()
+        //
+        PropStaticBegin = 21,
+        PropDynamic = 21,      // indicating the property is dynamically added
+        PropNoPersist = 22,    // corresponding to Prop_NoPersist
+        PropNoRecompute = 23,  // corresponding to Prop_NoRecompute
+        PropReadOnly = 24,     // corresponding to Prop_ReadOnly
+        PropTransient = 25,    // corresponding to Prop_Transient
+        PropHidden = 26,       // corresponding to Prop_Hidden
+        PropOutput = 27,       // corresponding to Prop_Output
+        PropStaticEnd = 28,
+
+        User1 = 28,  // user-defined status
+        User2 = 29,  // user-defined status
+        User3 = 30,  // user-defined status
+        User4 = 31   // user-defined status
+    };
+'''
+
+
+def propIsReadonly(obj, propName, debug=0):
+    statusList = [
         'Immutable', 1,
         'ReadOnly', 2,
         'PropReadOnly', 24,
         'PropOutput', 27,
-]
+    ]
 
-def propIsReadonly(obj, propName, debug=0):
     # AttributeError: Property container has no property 'AngularDeflection'
     statusnums = obj.getPropertyStatus(propName)
-    for status in statuslist:
+    for status in statusList:
         if status in statusnums:
             return True
     return False
+
+
+
 
 propInfo_by_doc_obj_propname = {}
 
@@ -432,7 +483,16 @@ def get_prop_info(doc,
         info["readonly"] = propIsReadonly(obj, propName)
     except:
         info["readonly"] = None
-    
+
+
+    # print(f"Getting hidden status of property '{propName}' of {obj} in document Label='{doc.Label}'...")
+    # try:
+    #     info["hidden"] = propIsHidden(obj, propName)
+    # except:
+    #     info["hidden"] = None
+    # print(f"Getting hidden status of property '{propName}' of obj Label='{obj.Label}' in document Label='{doc.Label}'...")
+    # info["hidden"] = propIsHidden(obj, propName)
+
     info["valuePython"] = propValue2python(propValue, objectlist)['normal']
     info["prefixPython"] = propValue2python(propValue, objectlist)['prefixed']
 

@@ -135,11 +135,30 @@ def main():
             continue
 
         instanceName = f"{args.objPrefix}instance"
-        try:
-            instance = cls(instanceName, doc, objPrefix=args.objPrefix, useLabel=True, importer=top_callsheet_pythonSource_dict, **eval(f"dict({args.param})"))
-        except Exception as e:
-            print(f"Error creating instance of class {className}: {e}")
-            continue
+
+        cls_param = {
+            'instanceName': instanceName,
+            'doc': doc,
+            'objPrefix': args.objPrefix,
+            'useLabel': True,
+            'importer': top_callsheet_pythonSource_dict
+        }
+
+        if args.param:
+            args_dict = eval(f"dict({args.param})")
+            print(f"args_dict: {args_dict}")
+            cls_param.update(args_dict)
+
+        print(f"Creating instance of class {className} with parameters: {cls_param}")
+
+
+        # try:
+        #     # instance = cls(instanceName, doc, objPrefix=args.objPrefix, useLabel=True, importer=top_callsheet_pythonSource_dict, **eval(f"dict({args.param})"))
+        #     instance = cls(**cls_param)
+        # except Exception as e:
+        #     print(f"Error creating instance of class {className}: {e}")
+        #     continue
+        instance = cls(**cls_param)
 
         doc.recompute()
         from cadcoder.objtools import map_obj_name_label

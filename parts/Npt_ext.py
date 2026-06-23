@@ -9,7 +9,7 @@ from cadcoder.objtools import update_obj_prop_jsonDict
 from cadcoder.subelementtools import update_objs_seName, update_doc_seName, get_seName_by_posName
 
 class npt_ext(baseClass):
-    def __init__(self, instanceName, doc, objPrefix="", useLabel=True, importer=None, bottom_npt_f_femaleOD_wall='2.032 mm', bottom_npt_f_holeDiaExpansion='0.762 mm', middle_cone_height='1 in', middle_cone_wall='0.12 in', top_npt_m_hole_holeDiaExpansion='0.762 mm', top_npt_m_hole_male_height='15.24 mm', top_npt_m_hole_nominalOD='`1',  ):
+    def __init__(self, instanceName, doc, objPrefix="", useLabel=True, importer=None, bottom_npt_f_femaleOD_wall='0.1 in', bottom_npt_f_holeDiaExpansion='0.03 in', middle_cone_height='1 in', middle_cone_wall='0.12 in', top_npt_m_hole_holeDiaExpansion='0.03 in', top_npt_m_hole_male_height='0.6 in', top_npt_m_hole_nominalOD='`1-1/2', top_npt_m_hole_wallThick='0.16 in',  ):
         self.bottom_npt_f_femaleOD_wall = bottom_npt_f_femaleOD_wall
         self.bottom_npt_f_holeDiaExpansion = bottom_npt_f_holeDiaExpansion
         self.middle_cone_height = middle_cone_height
@@ -17,20 +17,27 @@ class npt_ext(baseClass):
         self.top_npt_m_hole_holeDiaExpansion = top_npt_m_hole_holeDiaExpansion
         self.top_npt_m_hole_male_height = top_npt_m_hole_male_height
         self.top_npt_m_hole_nominalOD = top_npt_m_hole_nominalOD
+        self.top_npt_m_hole_wallThick = top_npt_m_hole_wallThick
         
         super().__init__(instanceName, doc, objPrefix=objPrefix, useLabel=useLabel, importer=importer)
         
         # import classes and create instances for directly imported objects
         from parts.npt_f import npt_f
-        bottom_npt_f_instance = npt_f('bottom_npt_f_instance', doc, objPrefix=self.objPrefix + 'bottom_npt_f_', useLabel=True, importer=self, diaExpansion='0.030000000000000002 in', femaleOD_wall='0.08 in', female_height='0.6000000000000001 in', nominalID='`1', )
+        bottom_npt_f_instance = npt_f('bottom_npt_f_instance', doc, objPrefix=self.objPrefix + 'bottom_npt_f_', useLabel=True, importer=self, diaExpansion='0.03 in', femaleOD_wall='0.1 in', female_height='0.6 in', nominalID='`1-1/2')
         self.bottom_npt_f_instance = bottom_npt_f_instance # expose as instance variable
         self.update_imports(bottom_npt_f_instance) # update import info for the instance
-        bottom_npt_f_instance.boolean.Visibility = False  # adjust imported object
+        bottom_npt_f_instance.boolean.Visibility = False
         from parts.npt_m_hole import npt_m_hole
-        top_npt_m_hole_instance = npt_m_hole('top_npt_m_hole_instance', doc, objPrefix=self.objPrefix + 'top_npt_m_hole_', useLabel=True, importer=self, bottomHoleDepth='0.1 in', bottomHoleDia0='1.0106521739130434 in', holeDiaExpansion='0.030000000000000002 in', male_height='0.6000000000000001 in', nominalOD='`1', topHoleDepth='0.5 in', topHoleDia0='1.0106521739130434 in', )
+        top_npt_m_hole_instance = npt_m_hole('top_npt_m_hole_instance', doc, objPrefix=self.objPrefix + 'top_npt_m_hole_', useLabel=True, importer=self, bottomHoleDepth='0.1 in', bottomWallThick='0.16 in', holeDiaExpansion='0.03 in', male_height='0.6 in', nominalOD='`1-1/2', topHoleDepth='0.5 in', topWallThick='0.16 in')
         self.top_npt_m_hole_instance = top_npt_m_hole_instance # expose as instance variable
         self.update_imports(top_npt_m_hole_instance) # update import info for the instance
-        top_npt_m_hole_instance.npt_m_instance.body.Placement = Placement(Vector(0.0000, 0.0000, 40.6400), Rotation(0.0000, 0.0000, 0.0000, 1.0000))  # adjust imported object
+        # top_npt_m_hole_instance.bottom_sketch.Constraints = [Sketcher.Constraint("Coincident", 0, 3, 1, -2000, 0, 0.0), Sketcher.Constraint("Diameter", 0, 0, -2000, 0, -2000, 0, 40.894)]
+        # top_npt_m_hole_instance.bottom_sketch.Geometry = [Part.Circle(Vector(0.0000, 0.0000, 0.0000), Vector (0.0, 0.0, 1.0), 20.4470)]
+        # top_npt_m_hole_instance.callsheet2.set(top_npt_m_hole_instance.callsheet2.getCellFromAlias("topHoleDia"), '=1.540432 in')
+        # top_npt_m_hole_instance.callsheet2.set(top_npt_m_hole_instance.callsheet2.getCellFromAlias("bottomHoleDia"), '=1.61 in')
+        top_npt_m_hole_instance.npt_m_instance.body.Placement = Placement(Vector(0.0000, 0.0000, 40.6400), Rotation(0.0000, 0.0000, 0.0000, 1.0000))
+        # top_npt_m_hole_instance.top_sketch.Constraints = [Sketcher.Constraint("Coincident", 0, 3, 1, -2000, 0, 0.0), Sketcher.Constraint("Diameter", 0, 0, -2000, 0, -2000, 0, 39.1269728)]
+        # top_npt_m_hole_instance.top_sketch.Geometry = [Part.Circle(Vector(0.0000, 0.0000, 0.0000), Vector (0.0, 0.0, 1.0), 19.5635)]
         
         # add objects and add static value to objects' properties based on object dependencies
         middle_inside_body = doc.addObject('PartDesign::Body', self.addPrefix('middle_inside_body') )
@@ -93,48 +100,52 @@ class npt_ext(baseClass):
         self.callsheet = callsheet
         self.post_new_obj(callsheet)
         callsheet.set('A1', 'variableName')
-        callsheet.set('A10', 'top_npt_m_hole_topHoleDepth')
-        callsheet.set('A11', 'top_npt_m_hole_placement_z')
-        callsheet.set('A12', 'middle_cone_height')
-        callsheet.set('A13', 'middle_cone_wall')
+        callsheet.set('A10', 'top_npt_m_hole_nominalOD')
+        callsheet.set('A11', 'top_npt_m_hole_topHoleDepth')
+        callsheet.set('A12', 'top_npt_m_hole_placement_z')
+        callsheet.set('A13', 'middle_cone_height')
+        callsheet.set('A14', 'middle_cone_wall')
         callsheet.set('A2', 'bottom_npt_f_femaleOD_wall')
         callsheet.set('A3', 'bottom_npt_f_female_height')
         callsheet.set('A4', 'bottom_npt_f_holeDiaExpansion')
         callsheet.set('A5', 'bottom_npt_f_nominalID')
         callsheet.set('A6', 'top_npt_m_hole_bottomHoleDepth')
-        callsheet.set('A7', 'top_npt_m_hole_holeDiaExpansion')
-        callsheet.set('A8', 'top_npt_m_hole_male_height')
-        callsheet.set('A9', 'top_npt_m_hole_nominalOD')
+        callsheet.set('A7', 'top_npt_m_hole_wallThick')
+        callsheet.set('A8', 'top_npt_m_hole_holeDiaExpansion')
+        callsheet.set('A9', 'top_npt_m_hole_male_height')
         callsheet.set('B1', 'value')
-        callsheet.set('B10', '=0.5 in')
-        callsheet.setAlias('B10', 'top_npt_m_hole_topHoleDepth')
-        callsheet.set('B11', '=1.6 in')
-        callsheet.setAlias('B11', 'top_npt_m_hole_placement_z')
-        callsheet.set('B12', '=1 in')
-        callsheet.setAlias('B12', 'middle_cone_height')
-        callsheet.set('B13', '=0.12 in')
-        callsheet.setAlias('B13', 'middle_cone_wall')
-        callsheet.set('B2', '=2.032 mm')
+        callsheet.set('B10', '`1-1/2')
+        callsheet.setAlias('B10', 'top_npt_m_hole_nominalOD')
+        callsheet.set('B11', '=0.5 in')
+        callsheet.setAlias('B11', 'top_npt_m_hole_topHoleDepth')
+        callsheet.set('B12', '=1.6 in')
+        callsheet.setAlias('B12', 'top_npt_m_hole_placement_z')
+        callsheet.set('B13', '=1 in')
+        callsheet.setAlias('B13', 'middle_cone_height')
+        callsheet.set('B14', '=0.12 in')
+        callsheet.setAlias('B14', 'middle_cone_wall')
+        callsheet.set('B2', '=0.1 in')
         callsheet.setAlias('B2', 'bottom_npt_f_femaleOD_wall')
-        callsheet.set('B3', '=0.6000000000000001 in')
+        callsheet.set('B3', '=0.6 in')
         callsheet.setAlias('B3', 'bottom_npt_f_female_height')
-        callsheet.set('B4', '=0.762 mm')
+        callsheet.set('B4', '=0.03 in')
         callsheet.setAlias('B4', 'bottom_npt_f_holeDiaExpansion')
-        callsheet.set('B5', '`1')
+        callsheet.set('B5', '`1-1/2')
         callsheet.setAlias('B5', 'bottom_npt_f_nominalID')
         callsheet.set('B6', '=0.1 in')
         callsheet.setAlias('B6', 'top_npt_m_hole_bottomHoleDepth')
-        callsheet.set('B7', '=0.762 mm')
-        callsheet.setAlias('B7', 'top_npt_m_hole_holeDiaExpansion')
-        callsheet.set('B8', '=15.24 mm')
-        callsheet.setAlias('B8', 'top_npt_m_hole_male_height')
-        callsheet.set('B9', '`1')
-        callsheet.setAlias('B9', 'top_npt_m_hole_nominalOD')
+        callsheet.set('B7', '=0.16 in')
+        callsheet.setAlias('B7', 'top_npt_m_hole_wallThick')
+        callsheet.set('B8', '=0.03 in')
+        callsheet.setAlias('B8', 'top_npt_m_hole_holeDiaExpansion')
+        callsheet.set('B9', '=0.6 in')
+        callsheet.setAlias('B9', 'top_npt_m_hole_male_height')
         callsheet.set('C1', 'isCallParam')
-        callsheet.set('C10', 'N')
+        callsheet.set('C10', 'Y')
         callsheet.set('C11', 'N')
-        callsheet.set('C12', 'Y')
+        callsheet.set('C12', 'N')
         callsheet.set('C13', 'Y')
+        callsheet.set('C14', 'Y')
         callsheet.set('C2', 'Y')
         callsheet.set('C3', 'N')
         callsheet.set('C4', 'Y')
@@ -144,8 +155,8 @@ class npt_ext(baseClass):
         callsheet.set('C8', 'Y')
         callsheet.set('C9', 'Y')
         callsheet.set('D1', 'comment')
-        callsheet.set('D7', '0.03 in for 3D print')
-        callsheet.set('D9', 'from npt_m_spec.nominalOD')
+        callsheet.set('D10', 'from npt_m_spec.nominalOD')
+        callsheet.set('D8', '0.03 in for 3D print')
         callsheet.Visibility = False
         callsheet.ViewObject.Visibility = False
         callsheet.recompute()  # recompute after adding object
@@ -155,32 +166,24 @@ class npt_ext(baseClass):
         self.callsheet2 = callsheet2
         self.post_new_obj(callsheet2)
         callsheet2.set('A1', 'variableName')
-        callsheet2.set('A2', 'top_npt_m_hole_bottomHoleDia')
-        callsheet2.set('A3', 'top_npt_m_hole_topHoleDia')
-        callsheet2.set('A4', 'middle_cone_outside_bottom_r')
-        callsheet2.set('A5', 'middle_cone_outside_top_r')
-        callsheet2.set('A6', 'middle_cone_inside_bottom_r')
-        callsheet2.set('A7', 'middle_cone_inside_top_r')
+        callsheet2.set('A2', 'middle_cone_outside_bottom_r')
+        callsheet2.set('A3', 'middle_cone_outside_top_r')
+        callsheet2.set('A4', 'middle_cone_inside_bottom_r')
+        callsheet2.set('A5', 'middle_cone_inside_top_r')
         callsheet2.set('B1', 'value')
-        callsheet2.set('B2', '=1.0106521739130434 in')
-        callsheet2.setAlias('B2', 'top_npt_m_hole_bottomHoleDia')
-        callsheet2.set('B3', '=1.0106521739130434 in')
-        callsheet2.setAlias('B3', 'top_npt_m_hole_topHoleDia')
-        callsheet2.set('B4', '=0.7525 in')
-        callsheet2.setAlias('B4', 'middle_cone_outside_bottom_r')
-        callsheet2.set('B5', '=0.6575 in')
-        callsheet2.setAlias('B5', 'middle_cone_outside_top_r')
-        callsheet2.set('B6', '=0.6325000000000001 in')
-        callsheet2.setAlias('B6', 'middle_cone_inside_bottom_r')
-        callsheet2.set('B7', '=0.5375 in')
-        callsheet2.setAlias('B7', 'middle_cone_inside_top_r')
+        callsheet2.set('B2', '=1.065 in')
+        callsheet2.setAlias('B2', 'middle_cone_outside_bottom_r')
+        callsheet2.set('B3', '=0.923912 in')
+        callsheet2.setAlias('B3', 'middle_cone_outside_top_r')
+        callsheet2.set('B4', '=0.9450000000000001 in')
+        callsheet2.setAlias('B4', 'middle_cone_inside_bottom_r')
+        callsheet2.set('B5', '=0.805 in')
+        callsheet2.setAlias('B5', 'middle_cone_inside_top_r')
         callsheet2.set('C1', 'isCallParam')
         callsheet2.set('C2', 'N')
         callsheet2.set('C3', 'N')
         callsheet2.set('C4', 'N')
         callsheet2.set('C5', 'N')
-        callsheet2.set('C6', 'N')
-        callsheet2.set('C7', 'N')
         callsheet2.set('D1', 'comment')
         callsheet2.recompute()  # recompute after adding object
         
@@ -192,8 +195,8 @@ class npt_ext(baseClass):
         middle_inside_cone.AttachmentSupport = (callsheet, (''))
         callsheet.Visibility = False  # hide base object
         middle_inside_cone.Height = 25.4
-        middle_inside_cone.Radius1 = 16.0655
-        middle_inside_cone.Radius2 = 13.652499999999998
+        middle_inside_cone.Radius1 = 24.003
+        middle_inside_cone.Radius2 = 20.447
         middle_inside_cone.recompute()  # recompute after adding object
         
         middle_outside_cone = doc.addObject('PartDesign::AdditiveCone', self.addPrefix('middle_outside_cone') )
@@ -202,8 +205,8 @@ class npt_ext(baseClass):
         self.post_new_obj(middle_outside_cone)
         self.container_append_object(middle_outside_body, middle_outside_cone)
         middle_outside_cone.Height = 25.4
-        middle_outside_cone.Radius1 = 19.1135
-        middle_outside_cone.Radius2 = 16.700499999999998
+        middle_outside_cone.Radius1 = 27.051
+        middle_outside_cone.Radius2 = 23.4673648
         middle_outside_cone.Visibility = False
         middle_outside_cone.ViewObject.Visibility = False
         middle_outside_cone.recompute()  # recompute after adding object
@@ -244,35 +247,33 @@ class npt_ext(baseClass):
         # add delayed static property values
         
         # add expressions to object properties based on expression dependencies
-        callsheet.set(callsheet.getCellFromAlias("top_npt_m_hole_bottomHoleDepth"), f"=0.1 in")
-        middle_inside_cone.setExpression("Height", f"<<{self.addPrefix('callsheet')}>>.middle_cone_height")
-        middle_outside_cone.setExpression("Height", f"<<{self.addPrefix('callsheet')}>>.middle_cone_height")
+        callsheet.set(callsheet.getCellFromAlias('top_npt_m_hole_bottomHoleDepth'), f"=0.1 in")
+        middle_inside_cone.setExpression('Height', f"<<{self.addPrefix('callsheet')}>>.middle_cone_height")
+        middle_outside_cone.setExpression('Height', f"<<{self.addPrefix('callsheet')}>>.middle_cone_height")
         top_npt_m_hole_instance.callsheet.set(top_npt_m_hole_instance.callsheet.getCellFromAlias('nominalOD'), f"=<<{self.addPrefix('callsheet')}>>.top_npt_m_hole_nominalOD")
         top_npt_m_hole_instance.callsheet.set(top_npt_m_hole_instance.callsheet.getCellFromAlias('holeDiaExpansion'), f"=<<{self.addPrefix('callsheet')}>>.top_npt_m_hole_holeDiaExpansion")
         top_npt_m_hole_instance.callsheet.set(top_npt_m_hole_instance.callsheet.getCellFromAlias('male_height'), f"=<<{self.addPrefix('callsheet')}>>.top_npt_m_hole_male_height")
         top_npt_m_hole_instance.callsheet.set(top_npt_m_hole_instance.callsheet.getCellFromAlias('bottomHoleDepth'), f"=<<{self.addPrefix('callsheet')}>>.top_npt_m_hole_bottomHoleDepth")
+        top_npt_m_hole_instance.callsheet.set(top_npt_m_hole_instance.callsheet.getCellFromAlias('topWallThick'), f"=<<{self.addPrefix('callsheet')}>>.top_npt_m_hole_wallThick")
+        top_npt_m_hole_instance.callsheet.set(top_npt_m_hole_instance.callsheet.getCellFromAlias('bottomWallThick'), f"=<<{self.addPrefix('callsheet')}>>.top_npt_m_hole_wallThick")
         bottom_npt_f_instance.callsheet.set(bottom_npt_f_instance.callsheet.getCellFromAlias('femaleOD_wall'), f"=<<{self.addPrefix('callsheet')}>>.bottom_npt_f_femaleOD_wall")
         bottom_npt_f_instance.callsheet.set(bottom_npt_f_instance.callsheet.getCellFromAlias('diaExpansion'), f"=<<{self.addPrefix('callsheet')}>>.bottom_npt_f_holeDiaExpansion")
-        callsheet.set(callsheet.getCellFromAlias("top_npt_m_hole_topHoleDepth"), f"=top_npt_m_hole_male_height - top_npt_m_hole_bottomHoleDepth")
-        callsheet.set(callsheet.getCellFromAlias("bottom_npt_f_female_height"), f"=top_npt_m_hole_male_height")
-        callsheet.set(callsheet.getCellFromAlias("bottom_npt_f_nominalID"), f"=top_npt_m_hole_nominalOD")
-        middle_outside_body.setExpression(".Placement.Base.z", f"<<{self.addPrefix('callsheet')}>>.bottom_npt_f_female_height")
+        callsheet.set(callsheet.getCellFromAlias('top_npt_m_hole_topHoleDepth'), f"=top_npt_m_hole_male_height - top_npt_m_hole_bottomHoleDepth")
+        callsheet.set(callsheet.getCellFromAlias('bottom_npt_f_female_height'), f"=top_npt_m_hole_male_height")
+        callsheet.set(callsheet.getCellFromAlias('bottom_npt_f_nominalID'), f"=top_npt_m_hole_nominalOD")
+        middle_outside_body.setExpression('.Placement.Base.z', f"<<{self.addPrefix('callsheet')}>>.bottom_npt_f_female_height")
         top_npt_m_hole_instance.callsheet.set(top_npt_m_hole_instance.callsheet.getCellFromAlias('topHoleDepth'), f"=<<{self.addPrefix('callsheet')}>>.top_npt_m_hole_topHoleDepth")
         bottom_npt_f_instance.callsheet.set(bottom_npt_f_instance.callsheet.getCellFromAlias('nominalID'), f"=<<{self.addPrefix('callsheet')}>>.bottom_npt_f_nominalID")
         bottom_npt_f_instance.callsheet.set(bottom_npt_f_instance.callsheet.getCellFromAlias('female_height'), f"=<<{self.addPrefix('callsheet')}>>.bottom_npt_f_female_height")
-        callsheet.set(callsheet.getCellFromAlias("top_npt_m_hole_placement_z"), f"=middle_cone_height + bottom_npt_f_female_height")
-        callsheet2.set(callsheet2.getCellFromAlias("middle_cone_outside_bottom_r"), f"=<<{self.addPrefix('bottom_npt_f_callsheet')}>>.femaleOD / 2")
-        middle_outside_cone.setExpression("Radius1", f"<<{self.addPrefix('callsheet2')}>>.middle_cone_outside_bottom_r")
-        callsheet2.set(callsheet2.getCellFromAlias("top_npt_m_hole_bottomHoleDia"), f"=<<{self.addPrefix('top_npt_m_hole_npt_m_callsheet')}>>.realOD - <<{self.addPrefix('top_npt_m_hole_npt_m_callsheet')}>>.pitch * 3.5")
-        callsheet2.set(callsheet2.getCellFromAlias("middle_cone_outside_top_r"), f"=<<{self.addPrefix('top_npt_m_hole_npt_m_callsheet')}>>.realOD / 2")
-        callsheet2.set(callsheet2.getCellFromAlias("middle_cone_inside_bottom_r"), f"=middle_cone_outside_bottom_r - <<{self.addPrefix('callsheet')}>>.middle_cone_wall")
-        middle_inside_cone.setExpression("Radius1", f"<<{self.addPrefix('callsheet2')}>>.middle_cone_inside_bottom_r")
-        middle_outside_cone.setExpression("Radius2", f"<<{self.addPrefix('callsheet2')}>>.middle_cone_outside_top_r")
-        top_npt_m_hole_instance.callsheet_hole.set(top_npt_m_hole_instance.callsheet_hole.getCellFromAlias('bottomHoleDia0'), f"=<<{self.addPrefix('callsheet2')}>>.top_npt_m_hole_bottomHoleDia")
-        callsheet2.set(callsheet2.getCellFromAlias("top_npt_m_hole_topHoleDia"), f"=top_npt_m_hole_bottomHoleDia")
-        callsheet2.set(callsheet2.getCellFromAlias("middle_cone_inside_top_r"), f"=middle_cone_outside_top_r - <<{self.addPrefix('callsheet')}>>.middle_cone_wall")
-        middle_inside_cone.setExpression("Radius2", f"<<{self.addPrefix('callsheet2')}>>.middle_cone_inside_top_r")
-        top_npt_m_hole_instance.callsheet_hole.set(top_npt_m_hole_instance.callsheet_hole.getCellFromAlias('topHoleDia0'), f"=<<{self.addPrefix('callsheet2')}>>.top_npt_m_hole_topHoleDia")
+        callsheet.set(callsheet.getCellFromAlias('top_npt_m_hole_placement_z'), f"=middle_cone_height + bottom_npt_f_female_height")
+        callsheet2.set(callsheet2.getCellFromAlias('middle_cone_outside_bottom_r'), f"=<<{self.addPrefix('bottom_npt_f_callsheet')}>>.femaleOD / 2")
+        callsheet2.set(callsheet2.getCellFromAlias('middle_cone_outside_top_r'), f"=<<{self.addPrefix('top_npt_m_hole_npt_m_callsheet')}>>.realOD / 2 - <<{self.addPrefix('top_npt_m_hole_npt_m_spec')}>>.Pitch * 0.3")
+        callsheet2.set(callsheet2.getCellFromAlias('middle_cone_inside_top_r'), f"=<<{self.addPrefix('top_npt_m_hole_callsheet2')}>>.bottomHoleDia / 2")
+        middle_inside_cone.setExpression('Radius2', f"<<{self.addPrefix('callsheet2')}>>.middle_cone_inside_top_r")
+        middle_outside_cone.setExpression('Radius1', f"<<{self.addPrefix('callsheet2')}>>.middle_cone_outside_bottom_r")
+        middle_outside_cone.setExpression('Radius2', f"<<{self.addPrefix('callsheet2')}>>.middle_cone_outside_top_r")
+        callsheet2.set(callsheet2.getCellFromAlias('middle_cone_inside_bottom_r'), f"=middle_cone_outside_bottom_r - <<{self.addPrefix('callsheet')}>>.middle_cone_wall")
+        middle_inside_cone.setExpression('Radius1', f"<<{self.addPrefix('callsheet2')}>>.middle_cone_inside_bottom_r")
         
         # add trigger objects' expressions
         
@@ -281,13 +282,14 @@ class npt_ext(baseClass):
         # now we have rebuilt the original npt_ext doc. Now we apply dynmic call parameters
         print("there can be temporary errors when we applying dynamic call parameters that change original npt_ext's shape.")
         print("ignore temporary errors, if any, below.")
+        callsheet.set(callsheet.getCellFromAlias('top_npt_m_hole_nominalOD'), f'{self.top_npt_m_hole_nominalOD}')
         callsheet.set(callsheet.getCellFromAlias('middle_cone_height'), f'={self.middle_cone_height}')
         callsheet.set(callsheet.getCellFromAlias('middle_cone_wall'), f'={self.middle_cone_wall}')
         callsheet.set(callsheet.getCellFromAlias('bottom_npt_f_femaleOD_wall'), f'={self.bottom_npt_f_femaleOD_wall}')
         callsheet.set(callsheet.getCellFromAlias('bottom_npt_f_holeDiaExpansion'), f'={self.bottom_npt_f_holeDiaExpansion}')
+        callsheet.set(callsheet.getCellFromAlias('top_npt_m_hole_wallThick'), f'={self.top_npt_m_hole_wallThick}')
         callsheet.set(callsheet.getCellFromAlias('top_npt_m_hole_holeDiaExpansion'), f'={self.top_npt_m_hole_holeDiaExpansion}')
         callsheet.set(callsheet.getCellFromAlias('top_npt_m_hole_male_height'), f'={self.top_npt_m_hole_male_height}')
-        callsheet.set(callsheet.getCellFromAlias('top_npt_m_hole_nominalOD'), f'{self.top_npt_m_hole_nominalOD}')
         doc.recompute()
         update_doc_seName(doc, refreshCache=True) # call params may change shape, so we update face/edge names.
         print("ignore temporary errors, if any, above.")
@@ -301,7 +303,7 @@ def main():
     doc = recreate_tmp_doc()
     
     # create instance of npt_ext
-    myInstance = npt_ext("myInstance", doc, objPrefix="", useLabel=True, importer=None, bottom_npt_f_femaleOD_wall='2.032 mm', bottom_npt_f_holeDiaExpansion='0.762 mm', middle_cone_height='1 in', middle_cone_wall='0.12 in', top_npt_m_hole_holeDiaExpansion='0.762 mm', top_npt_m_hole_male_height='15.24 mm', top_npt_m_hole_nominalOD='`1', )
+    myInstance = npt_ext("myInstance", doc, objPrefix="", useLabel=True, importer=None, bottom_npt_f_femaleOD_wall='0.1 in', bottom_npt_f_holeDiaExpansion='0.03 in', middle_cone_height='1 in', middle_cone_wall='0.12 in', top_npt_m_hole_holeDiaExpansion='0.03 in', top_npt_m_hole_male_height='0.6 in', top_npt_m_hole_nominalOD='`1-1/2', top_npt_m_hole_wallThick='0.16 in', )
     
     # main_part2
     from pprint import pformat

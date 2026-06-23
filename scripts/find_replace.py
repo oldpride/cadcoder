@@ -32,6 +32,7 @@ class ReplaceDialog(QtWidgets.QDialog):
         self.caseCheck = QtWidgets.QCheckBox("Case Sensitive")
         self.wholeWordCheck = QtWidgets.QCheckBox("Whole Word")
         self.regexCheck = QtWidgets.QCheckBox("Use RegExp")
+        self.includePythonSource = QtWidgets.QCheckBox("pythonSource")
 
         self.findButton = QtWidgets.QPushButton("Find")
         self.findButton.clicked.connect(self.search)
@@ -63,6 +64,7 @@ class ReplaceDialog(QtWidgets.QDialog):
         checks_row.addWidget(self.caseCheck)
         checks_row.addWidget(self.wholeWordCheck)
         checks_row.addWidget(self.regexCheck)
+        checks_row.addWidget(self.includePythonSource)
         checks_row.addStretch()  # push checkboxes to the left
         layout.addLayout(checks_row)
 
@@ -156,6 +158,7 @@ class ReplaceDialog(QtWidgets.QDialog):
         case_sensitive = self.caseCheck.isChecked()
         whole_word = self.wholeWordCheck.isChecked()
         use_regex = self.regexCheck.isChecked()
+        includePythonSource = self.includePythonSource.isChecked()
 
         if not old_substring:
             self.resultArea.append("Please enter a substring to replace.")
@@ -190,7 +193,7 @@ class ReplaceDialog(QtWidgets.QDialog):
                     self.resultArea.append("")
                     self.resultArea.append(f"Found match in Obj Label='{label}' Name={name}: in name; cannot change.")
             for propName in sorted(obj.PropertiesList):
-                if propName in ['pythonSource']:
+                if not includePythonSource and propName in ['pythonSource']:
                     continue
 
                 # try:

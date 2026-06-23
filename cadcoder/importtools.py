@@ -75,6 +75,8 @@ def map_importInfo(doc,
         'instanceName_by_objName': {},
         'importedInstChain_by_objName': {},
         'directlyImportedInstanceChains': set(),
+        'directlyImportedCallsheet_by_instName': {},
+        'directlyImportedCallsheetCallParamValues_by_instName': {},
     }
 
     for obj in sorted(doc.Objects, key=lambda o: o.Name):
@@ -141,7 +143,13 @@ def map_importInfo(doc,
 
                 import_by_key['directlyImportedInstInfo_by_InstName'][instanceName] = pythonSource
 
-                import_by_key['directlyImportedInstanceChains'].add(instanceChain)              
+                import_by_key['directlyImportedInstanceChains'].add(instanceChain)    
+
+                if obj.Name.endswith('callsheet') and obj.TypeId == 'Spreadsheet::Sheet':
+                    import_by_key['directlyImportedCallsheet_by_instName'][instanceName] = obj
+                    from cadcoder.callsheettools import get_callParamValues
+                    callParamValues = get_callParamValues(obj)
+                    import_by_key['directlyImportedCallsheetCallParamValues_by_instName'][instanceName] = callParamValues
             else:
                 import_by_key['indirectlyImportedObjs'].append(obj)
                 if instanceName not in import_by_key['indirectlyImportedObjs_by_instName']:
@@ -220,6 +228,9 @@ def get_importedDescendants_by_instanceChain(doc, instanceChain):
 def compare_import_with_default(doc, obj=None, instanceChain=None, instanceName = None,
                                     allObjects=False, # all objs in the instanceChain of the obj (above)
                                     diffOnly=False, commOnly=False, skipImport=False,
+                                    callParamValues=None, 
+                                    # dict of callParam key and value to use for import.
+                                    # if not given, get it from pythonSource, ie, import_by_key['importerCallParams_by_instChain']
                                      objTypeIdPattern=None, 
                                      propNamePattern=None,
                                      objLabelPattern=None, 
@@ -299,7 +310,14 @@ def compare_import_with_default(doc, obj=None, instanceChain=None, instanceName 
     directlyImportedInstanceName = instanceChain.split('.')[1]
     print(f"instanceChain={instanceChain}, directlyImportedInstanceName={directlyImportedInstanceName}")
 
-    importerCallParams = import_by_key['importerCallParams_by_instChain'][directlyImportedInstanceChain]
+    importerCallParams0 = import_by_key['importerCallParams_by_instChain'][directlyImportedInstanceChain]
+    if callParamValues is None:
+        importerCallParams0 = import_by_key['importerCallParams_by_instChain'][directlyImportedInstanceChain]
+    else:
+        importerCallParams = callParamValues.copy()
+        importerCallParams['instanceName'] = importerCallParams0['instanceName']
+        importerCallParams['objPrefix'] = importerCallParams0['objPrefix']
+        
     print(f"importerCallParams={importerCallParams}")
 
     className = import_by_key['className_by_instChain'][directlyImportedInstanceChain]

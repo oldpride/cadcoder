@@ -13,7 +13,7 @@ from FreeCAD import Vector, Placement
 import json
 from PySide2 import QtWidgets, QtCore
 from pprint import pformat
-from cadcoder.callsheettools import is_callParam
+from cadcoder.callsheettools import is_varName_callParam
 from cadcoder.importtools import map_importInfo
 from cadcoder.containertools import get_LCS_map, get_LCS_prefixes, get_container_by_objName
 from cadcoder.expressiontools import get_expInfo_by_objPropKey, sort_objs_exp_dependency

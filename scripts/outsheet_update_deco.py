@@ -4,7 +4,7 @@ from pdb import main
 import FreeCAD as App
 import FreeCADGui as Gui
 from cadcoder.objtools import print_obj
-from cadcoder.outsheettools import update_doc_outsheets
+from cadcoder.outsheettools_deco import update_doc_outsheets
 
 
 def parse_args():

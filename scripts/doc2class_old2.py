@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 
-__Version__ = '0.9'
+__Version__ = '0.1'
 __Date__ = '2025-12-29'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = ''
 __Wiki__ = 'README.md'
 __Name__ = 'doc to python class'
 __Comment__ = 'export FreeCAD document objects to python class code'
-__Author__ = 'Tian'
+__Author__ = 'Tianhua Han'
 __Icon__ = ''
 __Help__ = 'README.md'
 __Status__ = 'Alpha'
@@ -15,23 +15,17 @@ __Requires__ = 'FreeCAD >= 1.02'
 __Communication__ = ''
 __Files__ = ''
 
-from logging import config
-import os
 import re
 import sys
-import inspect
 import traceback
 
 import FreeCAD as App
 import FreeCADGui as Gui
-import Part
-from FreeCAD import Vector, Placement
 
 import json
-from PySide2 import QtWidgets, QtCore
 from pprint import pformat
 from cadcoder.callsheettools import is_varName_callParam
-from cadcoder.importtools import map_importInfo,  compare_import_with_default
+from cadcoder.importtools import get_directlyImportedInstanceName_by_objName, map_importInfo,  compare_import_with_default
 from cadcoder.containertools import get_LCS_map, get_LCS_prefixes, get_container_by_objName
 from cadcoder.expressiontools import get_expInfo_by_objPropKey, sort_objs_exp_dependency
 from cadcoder.logtools import prefix_stack
@@ -53,9 +47,8 @@ object.Name vs object.Label:
 - object.Name: 
     This is the internal, unique identifier of
     an object within a FreeCAD document. 
-    It is automatically assigned when an object is created and
-    cannot be changed later. The Name is used internally by 
-    FreeCAD for referencing objects in formulas and scripts, 
+    It is assigned when an object is created and cannot be changed later. 
+    The Name is used internally by FreeCAD for referencing objects in formulas and scripts, 
     especially when using methods like doc.getObject(). 
     It is guaranteed to be unique within a document.
 - object.Label: 
@@ -67,23 +60,7 @@ object.Name vs object.Label:
     appends numbers to ensure uniqueness if duplicate labels 
     are created. The Label is what users typically interact 
     with in the graphical interface.
-
-when applying mapping, we need do it in order. Therefore, use list.
-for example, if we have mappings:
-     ('Body001', 'Body'),
-     ('Body002', 'Body001'),
-
-we need to apply mappings in order on (Body001, Body002) to get (Body, Body001). correct.
-    ie, Body001 -> Body
-    Body002 -> Body001
-if we apply them in reverse order, we will get (Body, Body). wrong.
-    ie, Body001 -> Body
-    Body002 -> Body001 -> Body
 '''
-nameMapping = [
-    # (oldName, newName)
-]
-
 
 def main_part1():
     # main_part1
@@ -103,8 +80,18 @@ def main_part2(doc, myInstance):
     from cadcoder.doctools import reorganize_doc
     reorganize_doc(doc) 
 
-delayed_expression_by_objProp = {}  # properties with expression need adding in order.
-top_directly_imported_objs = set()
+diff_result_by_directlyImportedInstName = {}
+def compare_directlyImportedInstance_with_default(doc, directlyImportedInstName):
+    print(f"Comparing directlyImportedInstName='{directlyImportedInstName}' with default import...")
+    if directlyImportedInstName in diff_result_by_directlyImportedInstName:
+        print(f"cache hit for directlyImportedInstName={directlyImportedInstName}")
+        return diff_result_by_directlyImportedInstName[directlyImportedInstName]
+    diff_result = compare_import_with_default(doc, instanceName=directlyImportedInstName, 
+                                                 diffOnly=True, commOnly=False, skipImport=False,
+                                     objTypeIdPattern=None, propNamePattern=None, printDetail=True)
+    diff_result_by_directlyImportedInstName[directlyImportedInstName] = diff_result
+    return diff_result
+
 objProp_already_set_with_call_param = set()
 importCallInfo_by_instanceName = {}
 added_prefixedObjNames = {}
@@ -119,11 +106,9 @@ def add_imports(doc, useLabel: bool, import_by_key):
     # for example, boolean operation depends on top imported bodies's placement, etc.
     add_method_line('')
     add_method_line('# import classes and create instances for directly imported objects')
-    # directlyImportedInstanceChains = import_by_key['directlyImportedInstanceChains']
     directlyImportedInstInfo_by_InstName = import_by_key['directlyImportedInstInfo_by_InstName']
     directlyImportedInstanceNames = directlyImportedInstInfo_by_InstName.keys()
     print(f"Directly imported instance names: {directlyImportedInstanceNames}")
-    # exit(0)
     for instanceName in directlyImportedInstanceNames:
         instInfo = directlyImportedInstInfo_by_InstName[instanceName]
         className = instInfo['className']
@@ -132,12 +117,11 @@ def add_imports(doc, useLabel: bool, import_by_key):
 
         add_method_line(f"import_placeholder_{instanceName}")
 
-        # add_method_line(f'from {moduleName} import {className}')
         importCode_by_instanceName[instanceName] = f'from {moduleName} import {className}\n'
-        # import method-1: use placeholder parameter for callsheet parameters. later set the parameters' values.
-        # add_method_line(f"{instanceName} = {className}('{instanceName}', doc, objPrefix=self.objPrefix + '{objPrefix}', useLabel={useLabel}, importer=self, import_placeholder_{instanceName})")
         
+        # import method-1: use placeholder parameter for callsheet parameters. later set the parameters' values.
         importCode_by_instanceName[instanceName] += f"        {instanceName} = {className}('{instanceName}', doc, objPrefix=self.objPrefix + '{objPrefix}', useLabel={useLabel}, importer=self, params_placeholder_{instanceName})"
+        
         # import method-2: we can also use default values for parameters when importing instance 
         # because we will set properties's links later anyway.
         # add_method_line(f'{instanceName} = {className}('{instanceName}', doc, objPrefix={param_objPrefix}, useLabel={useLabel}), importer=self')
@@ -145,25 +129,72 @@ def add_imports(doc, useLabel: bool, import_by_key):
         add_method_line(f'self.{instanceName} = {instanceName} # expose as instance variable')
         add_method_line(f'self.update_imports({instanceName}) # update import info for the instance')
         
-        print(f"Comparing imports for instance: {instanceName}")
-        diff_result = compare_import_with_default(doc, instanceName=instanceName, 
-                                                 diffOnly=True, commOnly=False, skipImport=False,
-                                     objTypeIdPattern=None, propNamePattern='Placement|Visibility')
+        # check whether any properties changed by user after import.
+        diff_result = compare_directlyImportedInstance_with_default(doc, instanceName)
                                      
-        diff_props = diff_result['diff_props']
-        diff_exps = diff_result['diff_exps']
+        diff_props = diff_result['diff_props_static_only']
+
+        needReadOnlyObjTypeProp = [
+            # we don't need readonly properties generally, except these:
+            # by object.TypeId, propertyName
+            ('PartDesign::SubShapeBinder', 'Support'),
+        ]
         
-        for dp in diff_props:
-            obj = dp['obj']
-            propName = dp['propName']
+        for objProp in sorted(diff_props.keys()):
+            dp = diff_props[objProp]
+            objLabel, propName = objProp.split('.')
+            obj = get_obj_by_objKey(doc, objLabel, useLabel=1)
+
+            '''
+            skip properties that depends on later-created objects
+            eg,
+            npt_fxf_instance.base_plate.Group = [doc.getObject(self.addPrefix('npt_fxf_ketch')), doc.getObject(self.addPrefix('npt_fxf_pad')), doc.getObject(self.addPrefix('npt_fxf_boolean')), doc.getObject(self.addPrefix('chamfer_bottom')), doc.getObject(self.addPrefix('chamfer_top'))]
+            npt_fxf_instance.base_plate.Tip = doc.getObject(self.addPrefix('chamfer_top'))
+            '''
+            if propName in [ 
+                'Group', 'Tip', # these properties are depending on later-created objects. we will set them later after all objects are created.
+                'ExpressionEngine', # skip ExpressionEngine as it is handled separately in add_expression
+                ]:
+                continue
+
+            propType = obj.getTypeIdOfProperty(propName)
+            if propType in [
+                'Part::PropertyPartShape',
+                # properties in this type are derived properties. for example, AddSubShape, SuppressedShape.
+            ]:
+                continue            
+
+            if propIsReadonly(obj, propName):
+                skip = True
+
+                if propName in [
+                    'Label', # we need to set Label even though it is readonly.
+                    ]:
+                    skip = False
+                if obj.TypeId in [
+                    'Spreadsheet::Sheet', # we need to add cells in spreadsheet, even they are readonly.
+                    ]:
+                    skip = False
+                # if matchTuplePattern((obj2.TypeId, propName), needReadOnlyObjTypeProp):
+                # if match_key_startswith(needReadOnlyObjTypeProp, (obj2.TypeId, propName)):
+                if (obj.TypeId, propName) in needReadOnlyObjTypeProp:
+                    skip = False
+                
+                if skip:
+                    # print(f"({obj.TypeId}, {propName}) of object {obj.Name} is readonly, skipping")
+                    continue
+
             action = dp['action']
-            pythonSource = dp['pythonSource']
-            propInfo = dp['propInfo']
-            full_objVarName = get_full_objVarName(obj) # instanceName.shortVarName
-            prefixPython = propInfo['prefixPython']
+            
             if action in ['modified', 'added']:
-                add_method_line(f'{full_objVarName}.{propName} = {use_varname_in_prefixPython( doc, prefixPython )}  # adjust imported object')
+                if propName not in [
+                    'Visibility', 'Placement',
+                ]:
+                    add_method_line("# suggestion: link this property to callsheet")
+                    # add_method_line(f'{full_objVarName}.{propName} = {use_varname_in_prefixPython( doc, prefixPython )}  # adjust imported object')
+                add_static_prop_value_line(doc, obj, propName, useLabel)
             elif action in ['deleted']:
+                full_objVarName = get_full_objVarName(obj) # instanceName.shortVarName
                 add_method_line(f'# need to handle deleted property {propName} for object {full_objVarName}')
         
         # add_method_line(f'# fix edge name or face name for imported objects')
@@ -171,9 +202,10 @@ def add_imports(doc, useLabel: bool, import_by_key):
         # add_method_line(f'update_doc_seName(doc, refreshCache=True)')
         # add_method_line(f'')
 
-def add_expressions(doc, useLabel: bool, selection: list, topCallsheetObjs):
+def add_expressions(doc, useLabel: bool, selection: list, topCallsheetObjs, ignorePythonSource=False):
     add_method_line('')
     add_method_line("# add expressions to object properties based on expression dependencies")
+
     print()
     print(f"useLabel={useLabel} sorting expressions by dependency")
     print()
@@ -194,19 +226,24 @@ def add_expressions(doc, useLabel: bool, selection: list, topCallsheetObjs):
         else:
             topCallsheetObjKeys.append(topCallsheetObj.Name)
     
-    instanceChain_by_objName = import_by_key['instanceChain_by_objName']
+    if not ignorePythonSource:
+        importedInstChain_by_objName = import_by_key['importedInstChain_by_objName']
 
-    directlyImportedCallsheetObjKeys_by_instName = {}
-    for instName, objs in import_by_key['directlyImportedObjs_by_instName'].items():
-        for obj in objs:
-            if obj.TypeId != 'Spreadsheet::Sheet':
-                continue
-            if 'callsheet' in obj.Label:
-                if useLabel:
-                    directlyImportedCallsheetObjKeys_by_instName.setdefault(instName, set()).add(obj.Label)
-                else:
-                    directlyImportedCallsheetObjKeys_by_instName.setdefault(instName, set()).add(obj.Name)
-            
+        directlyImportedCallsheetObjKeys_by_instName = {}
+        diffExpResult_by_objPropKey_directInstName = {}
+        for instName, objs in import_by_key['directlyImportedObjs_by_instName'].items():
+            diff_result = compare_directlyImportedInstance_with_default(doc, directlyImportedInstName=instName)
+            diffExpResult_by_objPropKey_directInstName[instName] = diff_result['diff_exps']
+
+            for obj in objs:
+                if obj.TypeId != 'Spreadsheet::Sheet':
+                    continue
+                if 'callsheet' in obj.Label:
+                    if useLabel:
+                        directlyImportedCallsheetObjKeys_by_instName.setdefault(instName, set()).add(obj.Label)
+                    else:
+                        directlyImportedCallsheetObjKeys_by_instName.setdefault(instName, set()).add(obj.Name)
+      
     for objPropKey in sort_exps_result['ready_list']:
         # print(f"processing expression for objPropKey={objPropKey}")
         if objPropKey in objProp_already_set_with_call_param:
@@ -215,263 +252,101 @@ def add_expressions(doc, useLabel: bool, selection: list, topCallsheetObjs):
             continue
 
         objKey, propName = objPropKey.rsplit('.', 1)
-        obj = get_obj_by_objKey(doc, objKey, useLabel)        
-        expInfo = get_expInfo_by_objPropKey(doc, objPropKey, useLabel)
+        obj = get_obj_by_objKey(doc, objKey, useLabel)      
 
-        # skip expressions for indirectly imported objects
-        if obj in import_by_key['indirectlyImportedObjs']:
-            if debug:
-                print(f"skipping expression for indirectly imported objKey={objKey} propName={propName}")
-            continue
-
-        # skip trigger object's expressions. will be handled separately.
         if obj.TypeId == 'App::FeaturePython' and obj.Label == 'trigger':
+            # trigger is handled separately in add_triggers.
             # print(f"skipping expression for trigger object objKey={objKey} propName={propName}")
             continue
 
-        # now obj is either a top-level object in current class, or a directly imported object. 
+        expInfo = get_expInfo_by_objPropKey(doc, objPropKey, useLabel)
 
-        print(f"objPropKey={objPropKey}")
-
-        if obj in import_by_key['directlyImportedObjs']:
-            # this is a directly imported object. 
-            
-            if len(expInfo['parents']) == 0:
-                continue # no dependency, no need to set via callsheet.
-
-            '''
-            now that this is a directly imported obj.
-            if the obj is a directly imported callsheet, 
-                if the exp is a cell address in B column, 
-                    if it depends on top callsheet, it needs further processing.
-                    if its alias is a callParam, 
-                        if it depends on another prop, it needs processing.
-                        if it depends oncallsheets in the same instance's descendants, it is ok.
-                        else, we consider it bad practice, because it creates inter-direct-import dependency.
-                if the exp is a property,
-                    need further process.
-                if the exp is an alias, it only depends on its cell addr, we can skip it
-                    because it is already handled with other static props.
-                    note: alias includes callParam.
-            else, the obj is not a callsheet, eg, when we handle a directly imported body's placement's exp,
-                1. the placement is not a call param, but we still need to set its exp.
-                2. if the exp depend on top callsheet, we need to connect it to top callsheet.
-                3. if the exp depend on any directly imported callsheet, we don't need to process further, 
-                   because the directly imported module will handle it internally.
-                4. if the exp need info from any other imported instance's callsheet, 
-                   we should extract the info from that callsheet to top callsheet.
-
-            in any case, we forbid direct dependency between directly imported instances.              
-            '''
-
-            need_further_process = False
-            if 'callsheet' in obj.Label:
-                # obj is directly imported callsheet.
+        if not ignorePythonSource:
+            if obj.Name in importedInstChain_by_objName:
+                # this is an imported obj: directly imported or indirectly imported.
+                instanceName = import_by_key['instanceName_by_objName'][obj.Name] 
+                instanceChain = import_by_key['importedInstChain_by_objName'][obj.Name]
+                directInstName = get_directlyImportedInstanceName_by_objName(doc, obj.Name)         
                 
-                if re.match(r'^B[0-9]+$', propName):
-                    # this is cell address in B column
-                    cell_addr = propName
-                    alias = obj.getAlias(cell_addr)
-                    if alias and is_varName_callParam(obj, alias):
-                        need_further_process = True
+                if directInstName not in diffExpResult_by_objPropKey_directInstName:
+                    # this imported instance has no expression difference with default import, we skip it.
+                    continue
+                
+                diffExpResult_by_objPropKey = diffExpResult_by_objPropKey_directInstName[directInstName]
+                if objPropKey not in diffExpResult_by_objPropKey:
+                    # this imported obj's expression is the same as default import
+                    continue
 
-                    for parentExp in expInfo['parents']:
-                        parent_objKey = parentExp.rsplit('.', 1)[0]
+                diffExpResult = diffExpResult_by_objPropKey[objPropKey]
+                if diffExpResult['action'] in ('modified', 'added'):
+                    # this imported obj's expression is different from default import, 
+                    add_exp_line(doc, obj, propName, useLabel)
 
-                        if parent_objKey == objKey:
-                            # expression depends on the callsheet itself, no problem.
-                            if debug:
-                                print(f"expression for directly imported callsheet objKey={objKey} propName={propName}, depends on itself. ok")
-                            continue
-                        elif parent_objKey in topCallsheetObjKeys:
-                            if debug:
-                                print(f"expression for directly imported callsheet objKey={objKey} propName={propName}, depends on topCallsheet, parents={expInfo['parents']}. ok")
-                            continue
-
-                        parent_obj = get_obj_by_objKey(doc, parent_objKey, useLabel)
-                        parent_name = parent_obj.Name
-                        parent_instName = import_by_key['instanceName_by_objName'][parent_name]
-                        parent_instChain = import_by_key['instanceChain_by_objName'][parent_name]
-                        my_instChain = import_by_key['instanceChain_by_objName'][obj.Name]
-
-                        if parent_instChain in my_instChain or my_instChain in parent_instChain:
-                            if debug:
-                                print(f"expression for directly imported callsheet objKey={objKey} propName={propName}, depends on callsheet in the same instanceChain, parents={expInfo['parents']}. ok")
-                            continue
-                        else:
-                            msg = f"directly imported callsheet objKey={objKey} propName={propName} exp={expInfo['rawExpression']} depends on callsheet from different instance, parents={expInfo['parents']}. bad practice."
+                    expInfo = diffExpResult['expInfo']
+                    
+                    # print(f"expInfo={pformat(expInfo)}")
+                    if expInfo["source"] == 'SpreadsheetCell':
+                        # if exp source is SpreadsheetCell, the propName is a cell address, eg, B3.
+                        # find cell alias - it should have an alias so that others can refer to it.
+                        # otherwise, it is useless.
+                        try:
+                            alias = obj.getAlias(propName)
+                        except:
+                            alias = None
+                        if alias is None or alias == '':
+                            msg = f"Error: imported spreadsheet cell {obj.Label}.{propName} is set by topCallsheet, but has no alias defined."
                             print(msg)
-                            if strict:
-                                raise RuntimeError(msg)
-                            else:
-                                print("Warning: " + msg)
-                                continue
-                else:
-                    # check whether this propName is a cell alias
-                    cell_addr = obj.getCellFromAlias(propName)
-                    if cell_addr is not None:
-                        # propName is an alias. we skip it because it is already handled with other static props.
-                        # cell alias only depends on its cell value, so it does not create extra dependency.
-                        if debug:
-                            print(f"expression for directly imported callsheet objKey={objKey} propName={propName} is an alias for cell {cell_addr}, parents={expInfo['parents']}. skip because it is already handled with other static props.")
-                    else:
-                        # at this point, the propName is a normal property, not cell address nor alias. 
-                        need_further_process = True
-            else:
-                # obj is directly imported but is not a callsheet.
-                for parentExp in expInfo['parents']:
-                    parent_objKey = parentExp.rsplit('.', 1)[0]
-                    
-                    if parent_objKey == objKey:
-                        # expression depends on the callsheet itself, no problem.
-                        if debug:
-                            print(f"expression for directly imported callsheet objKey={objKey} propName={propName}, depends on itself. no work needed.")
-                        continue
-                    if parent_objKey in topCallsheetObjKeys:
-                        need_further_process = True
-                        if debug:
-                            print(f"expression for directly imported callsheet objKey={objKey} propName={propName}, depends on topCallsheet, parents={expInfo['parents']}. Will connect.")
-                        continue
-
-                    parent_obj = get_obj_by_objKey(doc, parent_objKey, useLabel)
-                    parent_name = parent_obj.Name
-                    parent_instName = import_by_key['instanceName_by_objName'][parent_name]
-                    parent_instChain = import_by_key['instanceChain_by_objName'][parent_name]
-                    my_instChain = import_by_key['instanceChain_by_objName'][obj.Name]
-                    
-                    if parent_instChain in my_instChain or my_instChain in parent_instChain:
-                        if debug:
-                            print(f"expression for directly imported objKey={objKey} propName={propName}, depends on callsheet in the same instanceChain, parents={expInfo['parents']}. ok")
-                        continue
-                    else:
-                        msg = f"directly imported objKey={objKey} propName={propName} exp={expInfo['rawExpression']} depends on other imported instance, parents={expInfo['parents']}. bad practice."
-                        print(msg)
-                        if strict:
+                            print(f"expInfo={pformat(expInfo)}")
+                            traceback.print_stack()
                             raise RuntimeError(msg)
-                        else:
-                            continue
-            
-            if not need_further_process:
-                continue
-
-            instanceName = import_by_key['instanceName_by_objName'][obj.Name]
-            instanceChain = import_by_key['instanceChain_by_objName'][obj.Name]
-
-            if debug:
-                print(f"connecting directly imported objKey={objKey} propName={propName} expression={expInfo['expression']} parents={expInfo['parents']} to topCallsheet")
-            
-            # if need_callInfo:
-            # extract callsheet parameter name and set it via callsheet parameter
-            # npt_m_callsheet.set("B3", f"=<<{addPrefix('npt_f_callsheet')}>>.horizontalScale")
-            # if the expression is from spreadsheet cell, we need to find its alias as call parameter.
-            
-            print(f"expInfo={pformat(expInfo)}")
-            if expInfo["source"] == 'SpreadsheetCell':
-                # if exp source is Spre)adsheetCell, the propName is a cell address, eg, B3.
-                # find cell alias - it must have an alias so that others can refer to it.
-                # otherwise, it is useless.
-                try:
-                    alias = obj.getAlias(propName)
-                except:
-                    alias = None
-                if alias is None or alias == '':
-                    msg = f"Error: imported spreadsheet cell {obj.Label}.{propName} is set by topCallsheet, but has no alias defined."
-                    print(msg)
-                    traceback.print_stack()
-                    raise RuntimeError(msg)
-                call_param_key = alias
-            else:
-                # for non-spreadsheet-cell property, we use propName as call parameter name.
-                call_param_key = propName
-
-            propInfo = get_prop_info(doc, obj, propName)    
-            importerCallParams = import_by_key['importerCallParams_by_instChain'][instanceChain]
-            # if propName != 'Placement': 
-            if call_param_key in importerCallParams.keys():
-                importCallInfo = {
-                    'call_param_key': call_param_key,
-                    'propInfo': propInfo,
-                }
-
-                if not instanceName in importCallInfo_by_instanceName:
-                    importCallInfo_by_instanceName[instanceName] = []
-                importCallInfo_by_instanceName[instanceName].append(importCallInfo)  
-                if debug:
-                    print(f"added call_param_key={call_param_key} (propName={propName}) importCallInfo for instanceName={instanceName}")
-            else:
-                if debug:
-                    print(f"skipping adding call_param_key={call_param_key} (propName={propName}) to instanceName={instanceName}'s importCallInfo because it is not in part of it.")
-
-            # instanceName = import_by_key['instanceName_by_objName'][obj.Name]
-            pythonSource = json.loads(obj.pythonSource)
-            varName_in_importedInstance = pythonSource['objVarName']
-            print()
-            print(f"varName_in_importedInstance={varName_in_importedInstance}, propName={propName} ")
-            print()
-
-            if 'callsheet' in varName_in_importedInstance:
-                if re.match(r'B[0-9]+', propName):
-                    print("here")
-                    # propName is cell addr
-                    # a cell property in callsheet spreadsheet can be a call parameter
-                    alias = obj.getAlias(propName)
-                    if alias is None:
-                        add_method_line(f"{instanceName}.{varName_in_importedInstance}.set('{propName}', f\"=" + expInfo['prefixedExp'] + f"\")")
+                        call_param_key = alias
                     else:
-                        add_method_line(f"{instanceName}.{varName_in_importedInstance}.set({instanceName}.{varName_in_importedInstance}.getCellFromAlias('{alias}'), f\"=" + expInfo['prefixedExp'] + f"\")")
-                else:
-                    # if this a alias, then we skip it because it is already set when setting static value.
-                    # alias is depending on the cell addr, not depending on the expression.
-                    # the cell addr depends on the expression. 
-                    cell_addr = obj.getCellFromAlias(propName)
-                    if cell_addr is not None:
-                        # this propName has a cell address, then it must be an alias. 
-                        # eg, callsheet.setAlias('B2', 'nominalID')
-                        pass # skip it
+                        # for non-spreadsheet-cell property, we use propName as call parameter name.
+                        call_param_key = propName
+
+                    propInfo = get_prop_info(doc, obj, propName)    
+                    importerCallParams = import_by_key['importerCallParams_by_instChain'][instanceChain]
+
+                    if call_param_key in importerCallParams.keys():
+                        importCallInfo = {
+                            'call_param_key': call_param_key,
+                            'propInfo': propInfo,
+                        }
+
+                        if not instanceName in importCallInfo_by_instanceName:
+                            importCallInfo_by_instanceName[instanceName] = []
+                        importCallInfo_by_instanceName[instanceName].append(importCallInfo)  
+                        if debug:
+                            print(f"added call_param_key={call_param_key} (propName={propName}) importCallInfo for instanceName={instanceName}")
                     else:
-                        # this is property.
-                        add_method_line(f"{instanceName}.{varName_in_importedInstance}.setExpression('{expVarName}', f\"{prefixedExp}\")")         
-            else:
-                # print(f"expInfo={pformat(expInfo)}")
-                expVarName = expInfo['varName']
-                prefixedExp = expInfo['prefixedExp']
-                add_method_line(f"{instanceName}.{varName_in_importedInstance}.setExpression('{expVarName}', f\"{prefixedExp}\")")
-            continue
+                        print(f"skipping adding call_param_key={call_param_key} (propName={propName}) to instanceName={instanceName}'s importCallInfo because it is not in part of it.")
+        
+                    continue
+                elif diffExpResult['action'] == 'deleted':
+                    add_method_line(f'# need to handle deleted expression for objPropKey={objPropKey} for imported instance {instanceName}')
+
         # we are done with (directly and indirectly) imported objects's expressions.
 
         # now we handle top (current) class's objects' expressions.
-        prefixedExp = expInfo['prefixedExp']
+        '''
+        if this is spreadsheet and is for a configuration table, we need to recompute
+            NPT_M_Thread_Spreadsheet.setExpression('.nominalOD.Enum', 'cells[<<A3:|>>]')
+            doc.recompute()
+            NPT_M_Thread_Spreadsheet.setExpression('.cells.Bind.B2.I2', 'tuple(.cells; <<B>> + str(hiddenref(nominalOD) + 3); <<I>> + str(hiddenref(nominalOD) + 3))')
+            doc.recompute()
+        without recompute, we may get error:
+            Error: '1 / 2' is not part of the enumeration
+            Error: Property 'RealOD' not found. 
+            note that the property RealOD is not even related to the configuration table. very hard to debug.
+        '''
         objVarName = get_obj_varname(obj, useLabel)
-        
-        if expInfo["source"] == 'SpreadsheetCell':
-            # if expression is from spreadsheet cell, we need to set it via spreadsheet cell.
-            # mention its alias in comment for easier debugging.
-            alias = obj.getAlias(propName)
-            if alias is None:
-                add_method_line(f'{objVarName}.set("{propName}", f"={prefixedExp}")')
-            else:
-                add_method_line(f'{objVarName}.set({objVarName}.getCellFromAlias("{alias}"), f"={prefixedExp}")')
-        elif expInfo["source"] == 'SpreadsheetAlias':
-            pass  # do nothing, already handled when setting static value.
-        else:
-            expVarName = expInfo['varName']
-            add_method_line(f'{objVarName}.setExpression("{expVarName}", f"{prefixedExp}")')
+        expVarName = expInfo['varName']
+        if obj.TypeId == 'Spreadsheet::Sheet' and (expVarName.startswith('.cells.Bind') or expVarName.endswith('.Enum')):
+            # add_method_line('doc.recompute() # recompute after setting configuration-table expression; otherwise error: Property ... not found.')
+            add_method_line(f'{objVarName}.recompute() # recompute after setting configuration-table expression; otherwise error: Property ... not found.')
+            # objs_waiting_for_recompute.clear()
+        add_exp_line(doc, obj, propName, useLabel)
 
-            '''
-            if this is spreadsheet and is for a configuration table, we need to recompute
-                NPT_M_Thread_Spreadsheet.setExpression('.nominalOD.Enum', 'cells[<<A3:|>>]')
-                doc.recompute()
-                NPT_M_Thread_Spreadsheet.setExpression('.cells.Bind.B2.I2', 'tuple(.cells; <<B>> + str(hiddenref(nominalOD) + 3); <<I>> + str(hiddenref(nominalOD) + 3))')
-                doc.recompute()
-            without recompute, we may get error:
-                Error: '1 / 2' is not part of the enumeration
-                Error: Property 'RealOD' not found. 
-                note that the property RealOD is not even related to the configuration table. very hard to debug.
-            '''
-            if obj.TypeId == 'Spreadsheet::Sheet' and (expVarName.startswith('.cells.Bind') or expVarName.endswith('.Enum')):
-                # add_method_line('doc.recompute() # recompute after setting configuration-table expression; otherwise error: Property ... not found.')
-                add_method_line(f'{objVarName}.recompute() # recompute after setting configuration-table expression; otherwise error: Property ... not found.')
-                # objs_waiting_for_recompute.clear()
 
 def add_triggers(doc):
     add_method_line('')
@@ -527,7 +402,130 @@ def add_triggers(doc):
                 targetObjPython = use_varname_in_prefixPython(doc, targetObjPython)
                 add_method_line(f"link_watch_to_target_func(doc, {watchObjPython}, '{watchPropName}', {targetObjPython}, '{moduleName}', '{funcName}', '{funcArgsStr}', useLabel)")
 
-def export_doc(doc, useLabel: bool, topClassName: str):
+def add_static_prop_value_line(doc, obj, propName, useLabel):
+    propInfo = get_prop_info(doc, obj, propName, useLabel=useLabel)
+    targetSpreadsheetCell = is_cell_in_sheet(propName, obj)
+    full_objVarName = get_full_objVarName(obj)
+
+    # if prop is from a spreadsheet cell, we will set it to spreadsheet cell too
+    # because we are replicating the document.
+    prop_value_str_repr = get_prop_static_value_str_repr(
+                        propInfo,
+                        targetFuncParam=False, # False because we are adding a prop, not a func param.
+                        targetSpreadsheetCell=targetSpreadsheetCell,
+                        preferInchUnit=True,   
+                    )
+    if targetSpreadsheetCell:
+        # this is a spreadsheet cell address.
+        # to make future adding row easier, we refer the cell through alias if alias is available.
+        alias = obj.getAlias(propName)
+        if alias is None:
+            # add_method_line(f'# add_static_prop_value_line, set value in cell addr')
+            add_method_line(f'{full_objVarName}.set("{propName}", {prop_value_str_repr})')
+        else:
+            # add_method_line(f'# add_static_prop_value_line, set value in cell addr through alias')
+            add_method_line(f'{full_objVarName}.set({full_objVarName}.getCellFromAlias("{alias}"), {prop_value_str_repr})')
+    else:
+        # add_method_line(f'# add_static_prop_value_line, not spreadsheet, set value in property')
+        add_method_line(f'{full_objVarName}.{propName} = {prop_value_str_repr}')
+
+def add_exp_line(doc, obj, propName, useLabel):
+    '''
+    example of an expression from ExpressionEngine for object's property:
+        - source: ExpressionEngine
+        - its expression is not its own property but referring to other object's property.
+    'b_npt_f_npt_m_additive_cone.Height': {'comment': 'ExpressionEngine '
+                                                    'expressions are all '
+                                                    'ungrounded',
+                                            'expression': '<<b_npt_f_npt_m_callsheet>>.cone_height',
+                                            'grounded': False,
+                                            'parents': ['b_npt_f_npt_m_callsheet.cone_height'],
+                                            'prefixedExp': "<<{self.addPrefix('b_npt_f_npt_m_callsheet')}>>.cone_height",
+                                            'rawExpression': '<<b_npt_f_npt_m_callsheet>>.cone_height',
+                                            'source': 'ExpressionEngine',
+                                            'varName': 'Height'},
+
+    example of an expression from ExpressionEngine for object's constraint
+    's_npt_f_npt_m_sketch.Constraints[4]': {'comment': 'ExpressionEngine '
+                                                        'expressions are all '
+                                                        'ungrounded',
+                                            'expression': '<<s_npt_f_npt_m_callsheet>>.thread_start_r',
+                                            'grounded': False,
+                                            'parents': ['s_npt_f_npt_m_callsheet.thread_start_r'],
+                                            'prefixedExp': "<<{self.addPrefix('s_npt_f_npt_m_callsheet')}>>.thread_start_r",
+                                            'rawExpression': '<<s_npt_f_npt_m_callsheet>>.thread_start_r',
+                                            'source': 'ExpressionEngine',
+                                            'varName': 'Constraints[4]'},
+
+    example of an expression from spreadsheet cell
+    'b_npt_f_callsheet.B6': {'expression': '<<callsheet>>.holeDiaExpansion',
+                            'grounded': False,
+                            'parents': ['callsheet.holeDiaExpansion'],
+                            'prefixedExp': "<<{self.addPrefix('callsheet')}>>.holeDiaExpansion",
+                            'rawExpression': '<<callsheet>>.holeDiaExpansion',
+                            'source': 'SpreadsheetCell',
+                            'varName': 'B6'},
+
+    example of an spreadsheet cell alias - its expression is its own cell address:
+    'b_npt_f_callsheet.diaExpansion': {'expression': '<<b_npt_f_callsheet>>.B6',
+                                        'grounded': False,
+                                        'parents': ['b_npt_f_callsheet.B6'],
+                                        'prefixedExp': "<<{self.addPrefix('b_npt_f_callsheet')}>>.B6",
+                                        'rawExpression': '<<b_npt_f_callsheet>>.B6',
+                                        'source': 'SpreadsheetAlias',
+                                        'varName': 'diaExpansion'},
+    '''
+
+    if useLabel:
+        objKey = obj.Label
+    else:
+        objKey = obj.Name
+    objPropKey = f"{objKey}.{propName}"
+    expInfo = get_expInfo_by_objPropKey(doc, objPropKey, useLabel)
+    # propInfo = get_prop_info(doc, obj, propName, useLabel=useLabel)
+    isPropSpreadsheetCell = is_cell_in_sheet(propName, obj)
+    full_objVarName = get_full_objVarName(obj)
+
+    if expInfo is None:
+        raise RuntimeError(f"trying to add {full_objVarName} as expression but its expInfo is None.")
+    valueString = expInfo['prefixedExp']
+
+    if isPropSpreadsheetCell:
+        # this is a spreadsheet cell, we set it through its alias if alias is available, so that
+        # future adding row will be easier without having to adjust cell address in expression.
+        alias = obj.getAlias(propName)
+ 
+        if alias is None:
+            # add_method_line(f"# add_exp_line, set exp in cell addr")
+            add_method_line(f"{full_objVarName}.set('{propName}', f\"={valueString}\")")        
+        else:    
+            # add_method_line(f"# add_exp_line, set exp in cell addr through alias")
+            add_method_line(f"{full_objVarName}.set({full_objVarName}.getCellFromAlias('{alias}'), f\"={valueString}\")")            
+    else:
+        # if this an alias, then we skip it because it is already set when setting static value.
+        # alias is depending on the cell addr, not depending on the expression.
+        # the cell addr depends on the expression. 
+        cell_addr = None
+        try:
+            cell_addr = obj.getCellFromAlias(propName)
+        except Exception as e:
+            print(f"Error getting cell address for alias '{propName}': {e}")
+        if cell_addr is not None:
+            # this propName has a cell address, then it must be an alias. 
+            # eg, callsheet.setAlias('B2', 'nominalID')
+            # continue
+            alias = propName
+            # add_method_line(f"# add_exp_line, set spreadsheet cell alias={alias}")
+            # add_method_line(f"{full_objVarName}.setAlias('{cell_addr}', '{alias}') # should already been set when setting static value")        
+            pass
+        else:
+            # this is property, not a cell or alias.
+            expVarName = expInfo['varName']
+            # add_method_line(f"# add_exp_line, not spreadsheet, set exp in property")
+            add_method_line(f"{full_objVarName}.setExpression('{expVarName}', f\"{valueString}\")")               
+
+
+def export_doc(doc, useLabel: bool, topClassName: str, ignorePythonSource: bool):
     global import_by_key
     # global rowDict_by_varName
     print(f"Exporting objects in document: {doc.Name}, useLabel={useLabel}")
@@ -566,6 +564,10 @@ def export_doc(doc, useLabel: bool, topClassName: str):
     
     if topCallsheetObj0 is not None:
         if topClassName is None:
+            if ignorePythonSource:
+                print(f"ignorePythonSource is True, we will ignore pythonSource of topCallsheetObj0 and use doc.Name as topClassName")
+                topClassName = normalize_label(doc.Name)
+                print(f"Using doc.Name={doc.Name} as topClassName")
             if hasattr(topCallsheetObj0, 'pythonSource'):
                 # 1st try to use pythonSource's className if available
                 try:
@@ -598,19 +600,23 @@ def export_doc(doc, useLabel: bool, topClassName: str):
     added_objects = set() # use this to keep track of added objects
 
     # handle import first because others may depend on them.
-    import_by_key = map_importInfo(doc, topClassName, 
-                                   printDetail=debug,
-                                   )
-    add_imports(doc, useLabel, import_by_key)
+    if not ignorePythonSource:    
+        import_by_key = map_importInfo(doc, topClassName, 
+                                    printDetail=debug,
+                                    )
+        
+        add_imports(doc, useLabel, import_by_key)
 
-    # add imported objects to added_objects
-    for key in ['directlyImportedObjs', 'indirectlyImportedObjs']:
-        for obj in import_by_key[key]:
-            if useLabel:
-                objKey = obj.Label
-            else:
-                objKey = obj.Name
-            added_objects.add(objKey)
+        # add imported objects to added_objects
+        for key in ['directlyImportedObjs', 'indirectlyImportedObjs']:
+            for obj in import_by_key[key]:
+                if useLabel:
+                    objKey = obj.Label
+                else:
+                    objKey = obj.Name
+                added_objects.add(objKey)
+    else:
+        print(f"ignorePythonSource is True, we will ignore all pythonSource and treat all objects as non-imported, and we will not add any import statement in the generated code.")
 
     # now add objects that not part of import
     '''
@@ -624,13 +630,11 @@ def export_doc(doc, useLabel: bool, topClassName: str):
     Therefore, we do two passes:
 
     1. We first create skeleton bodies based on object dependencies and
-    set properties' resolved values first, no expressions yet.
+    set properties' resolved values (static value) first, no expressions yet.
     This basically gives us a static snapshot of the document.
 
     2. Then we add expressions according to expression dependencies.
     This allows us to maintain the dynamic relationships between object properties.
-
-    At last, we add some end of file codes.
     '''
 
     sort_objs_result = sort_objs_by_downstream(doc, useLabel, objList=selection, debug=debug, printDetail=1)
@@ -644,7 +648,8 @@ def export_doc(doc, useLabel: bool, topClassName: str):
             print(msg)
             raise RuntimeError(msg)
     
-    sorted_objKeyList = sort_objs_result['ready_list']
+    sorted_objKeyList = sort_objs_result['ready_list'] 
+    # 'ready_list' is a ready-to-be-add list because their dependency is figured out.
     added_objects.update(set(sort_objs_result['skip_set']))  # set of objPropKey.
 
     add_method_line('')
@@ -662,36 +667,35 @@ def export_doc(doc, useLabel: bool, topClassName: str):
                 print(f"ERROR: skipping object Name={obj.Name} TypeId={obj.TypeId} Label={obj.Label} because FeaturePython not supported yet.")
             continue
 
-        if hasattr(obj, 'pythonSource'):
-            pythonSource = json.loads(obj.pythonSource)
-            importClassName = pythonSource['className']
-            importInstanceName = pythonSource['instanceName']
+        if not ignorePythonSource:
+            if hasattr(obj, 'pythonSource'):
+                pythonSource = json.loads(obj.pythonSource)
+                importClassName = pythonSource['className']
+                importInstanceName = pythonSource['instanceName']
+        
+                if importInstanceName in import_by_key['directlyImportedObjs_by_instName']:
+                    # this obj is part of the direct import. we have already imported this object above.
+                    added_objects.add((obj.TypeId, obj.Name))
+                    continue
+                elif importClassName != topClassName:
+                    # this class must be recursively imported by other imported class - indirectly imported.
+                    # we mark it as ready and skip it.
+                    print(f"objKey={objKey}'s className={importClassName} is not in import list, neiterher current class, skipping it.")
+                    # indirectly_imported_objKeys.add(objKey)
+                    added_objects.add((obj.TypeId, obj.Name))
+                    continue
+                else:
+                    # top (current) class's object with pythonSource, we still need to create it.
 
-            
-            if importInstanceName in import_by_key['directlyImportedObjs_by_instName']:
-                # this obj is part of the direct import. we have already imported this object above.
-                added_objects.add((obj.TypeId, obj.Name))
-                continue
-            elif importClassName != topClassName:
-                # this class must be recursively imported by other imported class - indirectly imported.
-                # we mark it as ready and skip it.
-                print(f"objKey={objKey}'s className={importClassName} is not in import list, neiterher current class, skipping it.")
-                # indirectly_imported_objKeys.add(objKey)
-                added_objects.add((obj.TypeId, obj.Name))
-                continue
-            else:
-                # current class's object with pythonSource, we still need to create it.
-
-                canConvertToPython = pythonSource.get('canConvertToPython', True)
-                if not canConvertToPython:
-                    # some objects generated from Python but we don't know how to convert them
-                 # back to Python
-                    add_method_line(f'# object {obj.Name} of type {obj.TypeId} is generated from Python but cannot be converted back to Python. We will skip it, but you may need to handle it manually.')
-                    add_method_line(f"raise NotImplementedError('object {obj.Name} of type {obj.TypeId} cannot be converted back to Python. Please handle it manually.')")
-                    
-                    msg = f"Error: object {obj.Name} of type {obj.TypeId} is generated from Python but cannot be converted back to Python. We will skip it, but you may need to handle it manually."
-                    print(msg)
-                    raise NotImplementedError(msg)
+                    canConvertToPython = pythonSource.get('canConvertToPython', True)
+                    if not canConvertToPython:
+                        # some objects are generated from Python but we don't know how to convert them back to Python
+                        add_method_line(f'# object {obj.Name} of type {obj.TypeId} is generated from Python but cannot be converted back to Python. We will skip it, but you may need to handle it manually.')
+                        add_method_line(f"raise NotImplementedError('object {obj.Name} of type {obj.TypeId} cannot be converted back to Python. Please handle it manually.')")
+                        
+                        msg = f"Error: object {obj.Name} of type {obj.TypeId} is generated from Python but cannot be converted back to Python. We will skip it, but you may need to handle it manually."
+                        print(msg)
+                        raise NotImplementedError(msg)
 
         # now the object is not part of import, we need to create it.
         objVarName = add_object(doc, obj, useLabel, selection)
@@ -718,28 +722,21 @@ def export_doc(doc, useLabel: bool, topClassName: str):
         add_method_line("")
         
     add_method_line('# add delayed static property values')
-    for (obj, vname, propName, info) in delayed_prop_static_values:
-        prefixPython = use_varname_in_prefixPython( doc, info['prefixPython'] )
+    for (obj, vname, propName, propInfo) in delayed_prop_static_values:
+        prefixPython = use_varname_in_prefixPython( doc, propInfo['prefixPython'] )
         add_method_line(f'{vname}.{propName} = {prefixPython}')
 
-    add_expressions(doc, useLabel, selection, topCallsheetObjs)
+    add_expressions(doc, useLabel, selection, topCallsheetObjs, ignorePythonSource)
 
     add_triggers(doc)
 
     add_method_line('')
     add_method_line('# add delayed expression property values - values, not expressions, eg, enum value')
     if delayed_prop_exp_values:
-        for (obj, vname, propName, info) in delayed_prop_exp_values:
-            # if obj == topCallsheetObj0 and not is_cell_in_sheet(propName, obj) and info.get('expInfo', None) is not None:
-            if obj in topCallsheetObjs and not is_cell_in_sheet(propName, obj) and info.get('expInfo', None) is not None:
-                # a non-cell property in callsheet spreadsheet can be a call parameter if it is an expression
-                # skip if propName is an alias         
-                call_param_name = propName
-                callsheet_params.append( (obj, vname, propName, info, call_param_name) )
-                add_method_line(f'{vname}.{propName} = {call_param_name}')
-            else:
-                prefixPython = use_varname_in_prefixPython(doc, info['prefixPython'] )
-                add_method_line(f'{vname}.{propName} = {prefixPython}')
+        for (obj, vname, propName, propInfo) in delayed_prop_exp_values:
+            # there should be no call param or callsheet cell here. therefore, very simple.
+            prefixPython = use_varname_in_prefixPython(doc, propInfo['prefixPython'] )
+            add_method_line(f'{vname}.{propName} = {prefixPython}')
 
     add_method_line('')
     add_method_line(f'# now we have rebuilt the original {topClassName} doc. Now we apply dynmic call parameters')
@@ -781,8 +778,11 @@ def export_doc(doc, useLabel: bool, topClassName: str):
     sorted_callsheet_params = sorted(callsheet_params, key=lambda x: x[4])
 
     callsheet_param_values_str = ""
-    for (obj, vname, propName, info, call_param_name) in sorted_callsheet_params:
-        param_value = get_prop_static_value_str_repr(info, targetFuncParam=True, preferInchUnit=True)
+    for (obj, vname, propName, propInfo, call_param_name) in sorted_callsheet_params:
+        param_value = get_prop_static_value_str_repr(propInfo, 
+                                              targetFuncParam=True, 
+                                              targetSpreadsheetCell=False, 
+                                              preferInchUnit=True)
         callsheet_param_values_str += f"{call_param_name}={param_value}, "
     
     add_body_line('')
@@ -805,7 +805,7 @@ def export_doc(doc, useLabel: bool, topClassName: str):
     for line in script_lines:
         if re.search(r'^\s*def init_placeholder', line):
             dialog.form.textEdit.append(f'    def __init__(self, instanceName, doc, objPrefix="", useLabel=True, importer=None, {callsheet_param_values_str} ):')
-            for (obj, vname, propName, info, call_param_name) in sorted_callsheet_params:
+            for (obj, vname, propName, propInfo, call_param_name) in sorted_callsheet_params:
                 dialog.form.textEdit.append(f'        self.{call_param_name} = {call_param_name}')
         elif m := re.search(r'import_placeholder_(.+?)$', line):
             instanceName = m.group(1)
@@ -820,7 +820,10 @@ def export_doc(doc, useLabel: bool, topClassName: str):
                 callParams_str = ""
                 for importCallInfo in sorted(importCallInfo_by_instanceName[instanceName], key=lambda x: x['call_param_key']):
                     call_param_key = importCallInfo['call_param_key']
-                    param_value = get_prop_static_value_str_repr(importCallInfo['propInfo'], targetFuncParam=True, preferInchUnit=True)
+                    param_value = get_prop_static_value_str_repr(importCallInfo['propInfo'], 
+                                                          targetFuncParam=True, 
+                                                          targetSpreadsheetCell=False, 
+                                                          preferInchUnit=True)
                     callParams_str += f"{call_param_key}={param_value}, "
                 importCode_by_instanceName[instanceName] = importCode_by_instanceName[instanceName].replace(f'params_placeholder_{instanceName}', callParams_str)
             # print(f"importCode_by_instanceName[{instanceName}] = {importCode_by_instanceName[instanceName]}")
@@ -835,12 +838,6 @@ out_line_number = 0
 script_lines = []
 def add_script_line(line, indent=0):
     global out_line_number
-
-    # when useLabel is True, nameMapping is empty.
-    # when useLabel is False, we may have nameMapping to apply.
-    for old, new in nameMapping:
-        # must match whole word and case-sensitive
-        line = re.sub(r'\b' + re.escape(old) + r'\b', new, line)
 
     # remove newlines - make multi-line code into single line
     line = line.replace('\n', ' ')
@@ -955,23 +952,22 @@ def get_full_objVarName(obj):
         pythonSource = json.loads(obj.pythonSource)
         objVarName = pythonSource['objVarName']
         shortObjVarName = objVarName
-        # instanceName = import_by_key['instanceName_by_objName'][obj.Name]
-        # instanceName = pythonSource['instanceName']
-        # fullObjVarName = f"{instanceName}.{shortObjVarName}"
         instanceChain = pythonSource['instanceChain']
         # since the code will be in the current instance, we remove the 1st element of the instanceChain
         instanceChain2 = '.'.join(instanceChain.split('.')[1:])
-        fullObjVarName = f"{instanceChain2}.{shortObjVarName}"
+        if instanceChain2:
+            fullObjVarName = f"{instanceChain2}.{shortObjVarName}"
+        else:
+            fullObjVarName = shortObjVarName
     else:
-        print(f"object Name={obj.Name} TypeId={obj.TypeId} has no pythonSource, using shortObjVarName as fullObjVarName")
-        fullObjVarName = shortObjVarName
+        print(f"object Name={obj.Name} Label={obj.Label}, TypeId={obj.TypeId} has no pythonSource, using obj.Label as fullObjVarName")
+        fullObjVarName = obj.Label
     return fullObjVarName
 
 
 def add_object(doc, obj, useLabel, objectList)-> str:
     '''
     add object to the doc.
-    add its props with static values only.
     '''
     objVarName = get_obj_varname(obj, useLabel)
     objVarNameUseLabel = get_obj_varname(obj, True)
@@ -1043,6 +1039,10 @@ def add_static_prop(doc, obj, objVarName, useLabel, objectList, topCallsheetObjs
         'pythonFeature',
     ]
 
+    skipPropTypes = [
+        'Part::PropertyPartShape', # props in this type are always derived. therefore, we don't manually change it.
+    ]
+
     skipTypeProp = [
         ('Sketcher::SketchObject', 'Geometry'),    # done by addSketch()
         ('Sketcher::SketchObject', 'Constraints'), # done by setExpressions()
@@ -1092,18 +1092,23 @@ def add_static_prop(doc, obj, objVarName, useLabel, objectList, topCallsheetObjs
     # varname is object's name or label based on useLabel.
     # add new properties - properties that are not in default
     compare_result = compare_obj_prop_with_default(doc, obj, useLabel, propPattern=None, extraAttrs=None)
-    for typeKey in ['MainObject', 'ViewObject']:
-        propNames = sorted(compare_result[typeKey].keys())
-        if typeKey == 'ViewObject':
+    for objCategory in ['MainObject', 'ViewObject']:
+        propNames = sorted(compare_result[objCategory].keys())
+        if objCategory == 'ViewObject':
             obj2 = obj.ViewObject
             objVarName2 = objVarName + '.ViewObject'
         else:
             obj2 = obj
             objVarName2 = objVarName
         for propName in propNames:
-            # print(f"considering adding property {typeKey}/{propName} for object {obj.Name} TypeId={obj.TypeId}")
+            # print(f"considering adding property {objCategory}/{propName} for object {obj.Name} TypeId={obj.TypeId}")
             if propName in skipProperties:
                 continue
+
+            propType = obj2.getTypeIdOfProperty(propName)
+            if propType in skipPropTypes:
+                continue
+
             # if (obj2.TypeId, propName) in skipObjProp:
             if match_key_startswith(skipTypeProp, (obj2.TypeId, propName)):
                 continue
@@ -1128,11 +1133,9 @@ def add_static_prop(doc, obj, objVarName, useLabel, objectList, topCallsheetObjs
                     # print(f"({obj.TypeId}, {propName}) of object {obj.Name} is readonly, skipping")
                     continue
             
-            OnePropResult = compare_result[typeKey][propName]
+            OnePropResult = compare_result[objCategory][propName]
             if OnePropResult['changeStatus'] in ['added', 'modified']:
                 info1 = OnePropResult['info1']
-                # this only defines the property, does not set its value yet. 
-                # so we cannot return here. we need to continue to set its value below.
 
                 if obj2.TypeId == 'Spreadsheet::Sheet' and is_cell_in_sheet(propName, obj2):
                     # this property is a cell in the spreadsheet
@@ -1140,10 +1143,10 @@ def add_static_prop(doc, obj, objVarName, useLabel, objectList, topCallsheetObjs
                     param_value = get_prop_static_value_str_repr(
                         info1,
                         targetFuncParam=False,
+                        targetSpreadsheetCell=True,
                         preferInchUnit=True,
                     )
                     add_method_line(f"{objVarName2}.set('{propName}', {param_value})")
-                    # objs_waiting_for_recompute.add(objVarName2)
 
                     alias = obj2.getAlias(propName)
                     if alias is not None:
@@ -1154,22 +1157,21 @@ def add_static_prop(doc, obj, objVarName, useLabel, objectList, topCallsheetObjs
 
                         else:
                             objAliasKey = f"{obj.Name}.{alias}"
-                        ready_expKeys.add(objAliasKey) # mark only alias as ready, not the prop itself.
+                        ready_expKeys.add(objAliasKey) # mark only alias as ready, not the prop (ie, cell addr) itself.
 
                         # a call parameter is the function call interface. It is given by caller, not derived from spreadsheet.
-                        # therefore, it cannot be a grounded expression.
+                        # therefore, it must be a grounded expression.
                         #
                         # a cell can be a call parameter if 
                         #    1. the spreadsheet label is 'callsheet' (topCallsheetObj)
                         #    2. the cell is in column 'B' (call parameter column)
                         #    3. it has an alias
                         #    4. if its alias name is not ending with '_const'. eg slope_const=tan(1.7899)
-                        #    5. its value is not an expression; or if expression, it is a static value expression.
-                        #       static value expression is like: =1 in, =tan(1.7899)
+                        #    5. its value is 
+                        #       - either not an expression; 
+                        #       - or if expression, it is a static value expression.
+                        #         like: =1 in, =tan(1.7899). ie, must be grounded.
                         if obj2 in topCallsheetObjs and propName.startswith('B'):
-                            # # skip if alias that is special reserved names.
-                            # if alias in ['ImportObj', 'ExportObj', 'Class', 'ImportParam', 'ImportInstance']:
-                            #     continue
                             # skip alias if it is not a callParam
                             if not is_varName_callParam(obj2, alias, checkParam=True):
                                 continue
@@ -1178,10 +1180,10 @@ def add_static_prop(doc, obj, objVarName, useLabel, objectList, topCallsheetObjs
                             expInfo = info1.get('expInfo', None)
                             if expInfo is not None and not expInfo['grounded']:
                                 pass  # has ungrounded expression, skip
-                            elif expInfo is not None and re.match(r'[.]B\d+$', expInfo['expression']):
-                                # for grounded expession, only one case is not call parameter.
-                                # 'Spreadsheet001.B2': '.B11',      # this is part of spreadsheet config table
-                                pass  # has expression, skip
+                            # elif expInfo is not None and re.match(r'[.]B\d+$', expInfo['expression']):
+                            #     # for grounded expession, only one case is not call parameter.
+                            #     # 'Spreadsheet001.B2': '.B11',      # this is part of spreadsheet config table
+                            #     pass  # has expression, skip
                             else:
                                 call_param_name = alias
                                 callsheet_params.append( (obj, objVarName2, alias, info1, call_param_name) )
@@ -1350,6 +1352,8 @@ def parse_args():
         -sc,--sourceClass: specify the source class name to use in the generated script
 
         -nuv,--notUseVarName: not use variable names in prefixPython expressions
+
+        -ip, --ignorePythonSource: ignore pythonSource property. treat the document as if it has no pythonSource.
     '''
 
     import argparse
@@ -1372,6 +1376,9 @@ def parse_args():
     
     parser.add_argument('-strict', '--strict', action='store_true', default=False,
                         help='enable strict expression mode, forbid bad practices')
+    
+    parser.add_argument('-ip', '--ignorePythonSource', action='store_true', default=False,
+                        help='ignore pythonSource property. treat the document as if it has no pythonSource.')
 
     try:
         args = parser.parse_args(sys.argv[1:])
@@ -1393,6 +1400,7 @@ def main():
     debug = args.debug
     strict = args.strict
     useLabel = not args.useName
+    ignorePythonSource = args.ignorePythonSource
     
     useVarName = not args.notUseVarName
 
@@ -1405,7 +1413,7 @@ def main():
     
     dialog = TextDialog()
         
-    export_doc(doc, useLabel=useLabel, topClassName=args.topClassName)
+    export_doc(doc, useLabel=useLabel, topClassName=args.topClassName, ignorePythonSource=ignorePythonSource)
     
 
 if __name__ == '__main__':
